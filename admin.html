@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root { --primary: #4f46e5; --primary-hover: #4338ca; --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; --orange: #f97316; --purple: #8b5cf6; }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+  
+  #splash { position: fixed; inset: 0; background: var(--primary); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; transition: 0.5s; }
+  #splash h1 { font-size: 3rem; margin-bottom: 10px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  #authScreen { position: fixed; inset: 0; background: #e5e7eb; display: none; align-items: center; justify-content: center; z-index: 9999; }
+  .auth-box { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; margin: 20px; }
+  .auth-box input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
+  .auth-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+  
+  #app { display: none; width: 100%; height: 100%; flex-direction: column; }
+  .mobile-topbar { display: none; background: var(--primary); color: white; padding: 15px; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; }
+  .mobile-topbar button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .layout { display: flex; width: 100%; height: 100%; overflow: hidden; }
+  .sidebar { width: 260px; background: #111827; color: white; display: flex; flex-direction: column; overflow-y: auto; transition: 0.3s; z-index: 1000; }
+  .brand { padding: 20px; font-size: 20px; font-weight: bold; border-bottom: 1px solid #374151; text-align: center; background: var(--primary); }
+  .menu { list-style: none; padding: 10px; }
+  .menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
+  .menu li:hover, .menu li.active { background: var(--primary); }
+  .menu li .icon { font-size: 18px; }
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
+  .topbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+  .topbar h2 { font-size: 20px; }
+  .btn-back { background: var(--success); color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: bold; }
+  .page { padding: 30px; display: none; animation: fadeIn 0.3s; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+  .stat-card { background: white; padding: 20px 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
+  .stat-card h3 { font-size: 13px; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
+  .stat-card p { font-size: 22px; font-weight: bold; color: var(--text); }
+  
+  .chart-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); height: 300px; }
+  
+  .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+  .card h3 { margin-bottom: 15px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; color: var(--primary); }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: 600; color: #374151; }
+  .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+  .btn-primary { background: var(--primary); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; }
+  .btn-danger { background: var(--danger); color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-success { background: var(--success); color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; margin: 2px; border-radius: 4px; cursor: pointer; border: none; color: white; }
+  
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; display: block; overflow-x: auto; white-space: nowrap; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+  th { background: #f9fafb; font-weight: 600; color: #6b7280; }
+  .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+  .status.pending { background: #fef3c7; color: #d97706; }
+  .status.confirm { background: #d1fae5; color: #059669; }
+  .status.rejected { background: #fee2e2; color: #dc2626; }
+  
+  .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 11000; transform: translateX(150%); transition: 0.3s; }
+  .toast.show { transform: translateX(0); }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+  .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 26px; }
+  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--success); }
+  input:checked + .slider:before { transform: translateX(24px); }
+  
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 5000; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal-box { background: white; padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; margin: 20px; max-height: 90vh; overflow-y: auto; }
+  .modal-box h3 { margin-bottom: 20px; color: var(--primary); }
+  
+  .pass-box { background: #fff3cd; border: 1px solid #ffeeba; border-radius: 10px; padding: 20px; margin-top: 15px; }
+  .pass-box h4 { color: #856404; margin-bottom: 15px; font-size: 15px; }
+
+  .user-info-cell { display: flex; align-items: center; gap: 8px; }
+  .user-info-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
+
+  .banner-preview { padding: 15px; border-radius: 10px; color: white; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .banner-preview h4 { font-size: 14px; margin-bottom: 3px; }
+  .banner-preview p { font-size: 11px; opacity: 0.9; }
+  .banner-preview .icon { font-size: 24px; }
+
+  .method-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; border: 1px solid #e5e7eb; }
+  .method-item img { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; background: white; padding: 2px; }
+
+  .fraud-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #e5e7eb; }
+  .fraud-row:last-of-type { border-bottom: none; }
+  .fraud-row .fraud-info { flex: 1; padding-right: 15px; }
+  .fraud-row .fraud-info b { display: block; margin-bottom: 5px; font-size: 15px; color: #1f2937; }
+  .fraud-row .fraud-info small { color: #6b7280; font-size: 12px; line-height: 1.4; display: block; }
+  .fraud-row input[type="number"] { width: 110px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; text-align: center; font-weight: bold; color: var(--primary); }
+
+  @media (max-width: 768px) {
+    .mobile-topbar { display: flex; }
+    .sidebar { position: fixed; left: -260px; height: 100%; }
+    .sidebar.open { left: 0; }
+    .overlay.active { display: block; }
+    .topbar { display: none; }
+    .page { padding: 15px; }
+    .card { padding: 15px; }
+    th, td { padding: 8px 10px; font-size: 13px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .stat-card { padding: 12px 10px; }
+    .stat-card h3 { font-size: 11px; margin-bottom: 5px; }
+    .stat-card p { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <h1>🚀 App Admin</h1>
+  <p>Professional Control Center</p>
+</div>
+
+<div id="authScreen">
+  <div class="auth-box">
+    <h2>🔐 Admin Login</h2>
+    <p style="color: #6b7280; margin-top: 5px; font-size: 14px;">Enter Password to access panel</p>
+    <input type="password" id="adminPass" placeholder="Enter Password">
+    <button onclick="login()">Login Now</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="mobile-topbar">
+    <button onclick="toggleSidebar()">☰</button>
+    <span>Admin Panel</span>
+    <a href="index.html" target="_blank" style="color:white; text-decoration:none; font-size:14px;">App</a>
+  </div>
+
+  <div class="layout">
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+      <div class="brand">Admin Panel</div>
+      <ul class="menu">
+        <li class="active" onclick="nav('dashboard')"><span class="icon">📊</span> Dashboard</li>
+        <li onclick="nav('users')"><span class="icon">👥</span> User Management</li>
+        <li onclick="nav('withdrawals')"><span class="icon">💸</span> Withdrawals</li>
+        <li onclick="nav('withdrawMethods')"><span class="icon">🏦</span> Withdraw Methods</li>
+        <li onclick="nav('tasks')"><span class="icon">🎯</span> Tasks & Rewards</li>
+        <li onclick="nav('banners')"><span class="icon">🖼️</span> Banner Management</li>
+        <li onclick="nav('fraud')"><span class="icon">🛡️</span> Fraud Prevention</li>
+        <li onclick="nav('notifications')"><span class="icon">🔔</span> Notifications</li>
+        <li onclick="nav('settings')"><span class="icon">⚙️</span> Settings</li>
+      </ul>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h2 id="pageTitle">Dashboard</h2>
+        <a href="index.html" target="_blank" class="btn-back">📱 Back to App</a>
+      </div>
+
+      <div id="dashboard" class="page active">
+        <div class="stats-grid">
+          <div class="stat-card"><h3>Daily Active Users</h3><p id="statActive">0</p></div>
+          <div class="stat-card"><h3>Total Users</h3><p id="statUsers">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--purple);"><h3>Total Users Earning (৳)</h3><p id="statTotalEarning" style="color: var(--purple);">0.00</p></div>
+          <div class="stat-card"><h3>Total Balance (৳)</h3><p id="statBalance">0.00</p></div>
+          
+          <div class="stat-card" style="border-left-color: var(--warning);"><h3>Pending Balance (৳)</h3><p id="statPendingBalance" style="color: var(--warning);">0.00</p></div>
+          <div class="stat-card" style="border-left-color: var(--success);"><h3>Confirmed Balance (৳)</h3><p id="statConfirmedBalance" style="color: var(--success);">0.00</p></div>
+          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Rejected Balance (৳)</h3><p id="statRejectedBalance" style="color: var(--danger);">0.00</p></div>
+
+          <div class="stat-card"><h3>Pending Withdrawals</h3><p id="statWithdrawals">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--success);"><h3>Confirmed Withdrawals</h3><p id="statConfirmed" style="color: var(--success);">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Rejected Withdrawals</h3><p id="statRejected" style="color: var(--danger);">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--orange);"><h3>Total Refer</h3><p id="statTotalRefer" style="color: var(--orange);">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--warning);"><h3>Refer Earning (৳)</h3><p id="statReferEarning" style="color: var(--warning);">0.00</p></div>
+        </div>
+        <div class="chart-container"><canvas id="myChart"></canvas></div>
+
+        <div class="card" style="margin-top: 20px;">
+          <h3>📋 Live User Activity Log</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">ইউজাররা অ্যাপে কখন কী কাজ করেছে তার লাইভ রেকর্ড।</p>
+          <table id="activityLogTable">
+            <thead>
+              <tr>
+                <th>ইউজার</th>
+                <th>ফোন</th>
+                <th>অ্যাক্টিভিটি</th>
+                <th>সময়</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="users" class="page">
+        <button class="btn-primary" style="margin-bottom: 15px; background: var(--success);" onclick="openAddUserModal()">➕ Add New User</button>
+        <div class="card">
+          <h3>User List</h3>
+          <div class="form-group">
+            <label>🔍 Search User</label>
+            <input type="text" id="searchUser" placeholder="Search by name, phone or email..." onkeyup="searchUser()">
+          </div>
+          <table id="userTable">
+            <thead><tr><th>User Profile</th><th>Phone</th><th>Email</th><th>Balance</th><th>Referrals</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="withdrawals" class="page">
+        <div class="card">
+          <h3>📜 Withdrawal Requests</h3>
+          <div class="form-group">
+            <label>Filter by Status</label>
+            <select id="filterWithdrawStatus" onchange="loadWithdrawals()">
+              <option value="all">All Requests</option>
+              <option value="pending">Pending</option>
+              <option value="confirm">Confirmed</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <table id="withdrawTable">
+            <thead><tr><th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date & Time</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="withdrawMethods" class="page">
+        <div class="card">
+          <h3>🏦 Manage Withdraw Methods</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে নতুন মেথড অ্যাড, এডিট এবং ডিলিট করতে পারবেন। ইউজার অ্যাপে লাইভ আপডেট হবে।</p>
+          <button class="btn-primary" style="background: var(--success); margin-bottom: 15px;" onclick="openMethodModal()">➕ Add New Method</button>
+          <div id="methodListContainer"></div>
+        </div>
+      </div>
+
+      <div id="tasks" class="page">
+        <div class="card">
+          <h3>Task Configuration (Live Sync)</h3>
+          <div class="grid-2">
+            <div class="form-group"><label>Daily Claim Reward (৳)</label><input type="number" id="cfgDailyClaim"></div>
+            <div class="form-group"><label>Refer Bonus (৳)</label><input type="number" id="cfgRefBonus"></div>
+            <div class="form-group"><label>Min Withdraw (৳)</label><input type="number" id="cfgMinWithdraw"></div>
+            <div class="form-group"><label>Spin Wheel Max Reward (৳)</label><input type="number" id="cfgSpinMax"></div>
+            <div class="form-group"><label>Scratch Card Max Reward (৳)</label><input type="number" id="cfgScratchMax"></div>
+            <div class="form-group"><label>Quiz Reward (৳)</label><input type="number" id="cfgQuizReward"></div>
+            <div class="form-group"><label>Captcha Reward (৳)</label><input type="number" id="cfgCaptchaReward"></div>
+            <div class="form-group"><label>Visit Website Reward (৳)</label><input type="number" id="cfgVisitReward"></div>
+            <div class="form-group"><label>Watch Video Reward (৳)</label><input type="number" id="cfgVideoReward"></div>
+          </div>
+          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">Daily Task Limits</h4>
+          <div class="grid-2">
+            <div class="form-group"><label>Lucky Spin Limit</label><input type="number" id="cfgLimitSpin"></div>
+            <div class="form-group"><label>Scratch Card Limit</label><input type="number" id="cfgLimitScratch"></div>
+            <div class="form-group"><label>Math Quiz Limit</label><input type="number" id="cfgLimitQuiz"></div>
+            <div class="form-group"><label>Captcha Limit</label><input type="number" id="cfgLimitCaptcha"></div>
+            <div class="form-group"><label>Visit Website Limit</label><input type="number" id="cfgLimitVisit"></div>
+            <div class="form-group"><label>Watch Video Limit</label><input type="number" id="cfgLimitVideo"></div>
+          </div>
+          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">Video Ad Settings</h4>
+          <div class="form-group"><label>Ad Embed URL</label><input type="text" id="cfgAdUrl"></div>
+          <div class="form-group"><label>Ad Duration (Seconds)</label><input type="number" id="cfgAdDuration"></div>
+          <button class="btn-primary" onclick="saveConfig()">💾 Save All Configurations</button>
+        </div>
+      </div>
+
+      <div id="banners" class="page">
+        <div class="card">
+          <h3>🖼️ Slider Banner Management</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে অ্যাপের হোম স্ক্রিনের স্লাইডার ব্যানার অ্যাড, এডিট এবং ডিলিট করতে পারবেন।</p>
+          <button class="btn-primary" style="background: var(--success); margin-bottom: 15px;" onclick="openBannerModal()">➕ Add New Banner</button>
+          <div id="bannerListContainer"></div>
+        </div>
+      </div>
+
+      <div id="fraud" class="page">
+        <div class="card">
+          <h3>🛡️ Fraud Prevention Settings</h3>
+          
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>Force Ad Watch</b>
+              <small>ইউজারকে অ্যাড না দেখে টাস্ক করতে দেবে না।</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="fraudForceAd"><span class="slider"></span></label>
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>Disable VPN Access</b>
+              <small>ভিপিএন ব্যবহার করলে অ্যাপ ব্লক হবে।</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="fraudVpn"><span class="slider"></span></label>
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>Block Multiple Accounts</b>
+              <small>একই ডিভাইসে একাধিক অ্যাকাউন্ট ব্লক।</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="fraudMultiAccount"><span class="slider"></span></label>
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>প্রতি আইপিতে সর্বোচ্চ অ্যাকাউন্ট</b>
+              <small>একটি আইপি থেকে সর্বোচ্চ কয়টি অ্যাকাউন্ট খোলা যাবে।</small>
+            </div>
+            <input type="number" id="fraudMaxIp" value="1">
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>সর্বোচ্চ উইথড্র লিমিট (৳)</b>
+              <small>একবারে সর্বোচ্চ কত টাকা উইথড্র করা যাবে।</small>
+            </div>
+            <input type="number" id="fraudMaxWithdraw" value="1000">
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>স্প্যাম টাইমার (সেকেন্ড)</b>
+              <small>একটি টাস্ক শেষ করে পরের টাস্ক কত সেকেন্ড পর করা যাবে।</small>
+            </div>
+            <input type="number" id="fraudSpamTimer" value="5">
+          </div>
+
+          <button class="btn-primary" style="background: var(--danger); margin-top: 20px;" onclick="saveFraudSettings()">🛡️ Save Fraud Settings</button>
+        </div>
+      </div>
+
+      <div id="notifications" class="page">
+        <div class="card">
+          <h3>Send Notification to User</h3>
+          <div class="form-group">
+            <label>Select User</label>
+            <select id="notifUserSelect"></select>
+          </div>
+          <div class="form-group">
+            <label>Message</label>
+            <input type="text" id="notifMsg" placeholder="Type your notification message...">
+          </div>
+          <button class="btn-primary" onclick="sendNotification()">📢 Send Notification</button>
+        </div>
+      </div>
+
+      <div id="settings" class="page">
+        <div class="card">
+          <h3>🔑 Change Admin Password</h3>
+          <div class="pass-box">
+            <h4>পাসওয়ার্ড পরিবর্তন করুন</h4>
+            <div class="form-group"><label>Old Password</label><input type="password" id="oldAdminPass"></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="newAdminPass"></div>
+            <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmAdminPass"></div>
+            <button class="btn-primary" style="background: #856404;" onclick="changeAdminPassword()">🔑 Update Password</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Danger Zone</h3>
+          <p style="color: var(--danger); margin-bottom: 15px; font-size: 14px;">Warning: Clearing data will remove all user progress, withdrawals, and settings permanently.</p>
+          <button class="btn-danger" style="padding: 10px 20px; font-size: 14px; width:100%;" onclick="clearAllData()">🗑️ Clear All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal-box">
+    <h3 id="userModalTitle">➕ Add New User</h3>
+    <input type="hidden" id="editUserId">
+    <div class="form-group"><label>Name</label><input type="text" id="editName"></div>
+    <div class="form-group"><label>Phone</label><input type="text" id="editPhone"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="editEmail"></div> <!-- ✅ নতুন ইমেইল ফিল্ড -->
+    <div class="form-group"><label>Password</label><input type="text" id="editPassword"></div>
+    <div class="form-group"><label>Balance (৳)</label><input type="number" id="editBalance"></div>
+    <div class="grid-2">
+      <button class="btn-primary" style="background:#6b7280; margin-top:0;" onclick="closeUserModal()">Cancel</button>
+      <button class="btn-primary" style="background: var(--success); margin-top:0;" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bannerModal">
+  <div class="modal-box">
+    <h3 id="bannerModalTitle">➕ Add New Banner</h3>
+    <input type="hidden" id="editBannerIdx">
+    <div class="form-group"><label>Title (শিরোনাম)</label><input type="text" id="bTitle" placeholder="যেমন: রেফার করে কামান"></div>
+    <div class="form-group"><label>Subtitle (বর্ণনা)</label><input type="text" id="bSubtitle" placeholder="যেমন: বন্ধুদের রেফার করে পান ৳50 বোনাস!"></div>
+    <div class="form-group"><label>Button Text</label><input type="text" id="bBtnText" placeholder="যেমন: এখনই রেফার করুন →"></div>
+    <div class="form-group">
+      <label>Button Action (কোন পেজে যাবে)</label>
+      <select id="bAction">
+        <option value="referModal">Refer Modal</option>
+        <option value="wheelModal">Lucky Spin Modal</option>
+        <option value="videoModal">Watch Video Modal</option>
+        <option value="scratchModal">Scratch Card Modal</option>
+        <option value="quizModal">Math Quiz Modal</option>
+        <option value="visitModal">Visit Website Modal</option>
+        <option value="dailyClaimModal">Daily Claim Modal</option>
+        <option value="withdrawModal">Withdraw Modal</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Icon (ইমোজি)</label>
+      <select id="bIcon">
+        <option value="🎁">🎁 Gift</option><option value="🎡">🎡 Wheel</option><option value="📺">📺 Video</option>
+        <option value="🎫">🎫 Ticket</option><option value="💰">💰 Money</option><option value="🏆">🏆 Trophy</option>
+        <option value="🔗">🔗 Link</option><option value="🌟">🌟 Star</option>
+      </select>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Gradient Color 1</label><input type="color" id="bColor1" value="#667eea"></div>
+      <div class="form-group"><label>Gradient Color 2</label><input type="color" id="bColor2" value="#764ba2"></div>
+    </div>
+    <div class="grid-2">
+      <button class="btn-primary" style="background:#6b7280; margin-top:0;" onclick="closeBannerModal()">Cancel</button>
+      <button class="btn-primary" style="background: var(--success); margin-top:0;" onclick="saveBanner()">Save Banner</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="methodModal">
+  <div class="modal-box">
+    <h3 id="methodModalTitle">➕ Add New Withdraw Method</h3>
+    <input type="hidden" id="editMethodIdx">
+    <div class="form-group"><label>Method Name</label><input type="text" id="mName" placeholder="যেমন: Bkash, Nagad, Rocket"></div>
+    <div class="form-group"><label>Logo URL (Optional)</label><input type="text" id="mLogo" placeholder="https://example.com/logo.png"></div>
+    <div class="form-group"><label>Minimum Amount (৳)</label><input type="number" id="mMinAmount" placeholder="50"></div>
+    <div class="form-group">
+      <label>Input Type (ইউজার কী ইনপুট দেবে)</label>
+      <select id="mInputType">
+        <option value="number">Phone Number</option>
+        <option value="text">Wallet Address / Text</option>
+      </select>
+    </div>
+    <div class="grid-2">
+      <button class="btn-primary" style="background:#6b7280; margin-top:0;" onclick="closeMethodModal()">Cancel</button>
+      <button class="btn-primary" style="background: var(--success); margin-top:0;" onclick="saveMethod()">Save Method</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">Message</div>
+
+<script>
+  let isTyping = false;
+  document.addEventListener('focusin', (e) => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') isTyping = true;
+  });
+  document.addEventListener('focusout', (e) => {
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') isTyping = false;
+  });
+
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('splash').style.display = 'none';
+      document.getElementById('authScreen').style.display = 'flex';
+    }, 500);
+  }, 2000);
+
+  if(!localStorage.getItem('admin_password')) {
+    localStorage.setItem('admin_password', 'admin123');
+  }
+
+  function login() {
+    const pass = document.getElementById('adminPass').value;
+    const storedPass = localStorage.getItem('admin_password');
+    if(pass === storedPass) {
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      initDashboard();
+    } else {
+      showToast('❌ Wrong Password!', '#ef4444');
+    }
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('active');
+  }
+
+  function nav(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.menu li').forEach(l => l.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    event.currentTarget.classList.add('active');
+    const title = event.currentTarget.innerText.trim();
+    document.getElementById('pageTitle').innerText = title;
+    document.querySelector('.mobile-topbar span').innerText = title;
+    if(window.innerWidth <= 768) toggleSidebar();
+    if(pageId === 'dashboard') initDashboard();
+    if(pageId === 'users') loadUsers();
+    if(pageId === 'withdrawals') loadWithdrawals();
+    if(pageId === 'withdrawMethods') loadMethods();
+    if(pageId === 'tasks') loadConfig();
+    if(pageId === 'banners') loadBanners();
+    if(pageId === 'fraud') loadFraudSettings();
+    if(pageId === 'notifications') loadNotifUsers();
+  }
+
+  function showToast(msg, color = '#333') {
+    const t = document.getElementById('toast');
+    t.innerText = msg; t.style.background = color; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function formatDate(dateStr) {
+    if(!dateStr) return 'N/A';
+    const parts = dateStr.split('/');
+    if(parts.length === 3) {
+      if(parseInt(parts[0]) > 12) return dateStr; 
+      return `${parts[1]}/${parts[0]}/${parts[2]}`;
+    }
+    return dateStr;
+  }
+
+  const defaultConfig = {
+    dailyClaim: 5, refBonus: 50, minWithdraw: 50,
+    spinMax: 15, scratchMax: 15, quizReward: 2, captchaReward: 1, visitReward: 2, videoReward: 3,
+    limitSpin: 10, limitScratch: 10, limitQuiz: 10, limitCaptcha: 10, limitVisit: 10, limitVideo: 10,
+    adUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', adDuration: 15,
+    fraud: { forceAd: true, vpnBlock: false, multiAccountBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 },
+    withdrawMethods: [
+      { id: 'recharge', name: 'Mobile Recharge', logo: 'https://cdn-icons-png.flaticon.com/512/3595/3595255.png', minAmount: 50, inputType: 'number' },
+      { id: 'bkash', name: 'Bkash', logo: 'https://download.logo.wine/logo/BKash/BKash-Logo.wine.png', minAmount: 50, inputType: 'number' },
+      { id: 'nagad', name: 'Nagad', logo: 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png', minAmount: 50, inputType: 'number' },
+      { id: 'usdt', name: 'USDT (TRC20)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', minAmount: 1, inputType: 'text' }
+    ]
+  };
+
+  const defaultBanners = [
+    { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান ৳50 বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
+    { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন ৳15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
+    { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটিটি ভিডিওতে পান ৳3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
+    { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন ৳15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
+  ];
+
+  function getData() {
+    let data = JSON.parse(localStorage.getItem('app_master_db'));
+    if(!data) {
+      data = { users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] };
+      localStorage.setItem('app_master_db', JSON.stringify(data));
+    }
+    if(!data.users && data.user) {
+      data.users = [{ id: Date.now(), password: 'demo123', ...data.user }];
+      delete data.user;
+      localStorage.setItem('app_master_db', JSON.stringify(data));
+    }
+    if(!data.config) data.config = defaultConfig;
+    if(!data.config.fraud) data.config.fraud = defaultConfig.fraud;
+    if(!data.config.withdrawMethods || !Array.isArray(data.config.withdrawMethods) || data.config.withdrawMethods.length === 0) {
+      data.config.withdrawMethods = defaultConfig.withdrawMethods;
+    }
+    if(!data.banners || !Array.isArray(data.banners) || data.banners.length === 0) {
+      data.banners = defaultBanners;
+    }
+    if(!data.activityLogs) data.activityLogs = [];
+    
+    let needsSave = false;
+    data.users.forEach(u => {
+      if(!u.joinDate) { u.joinDate = new Date().toLocaleDateString(); needsSave = true; }
+      if(!u.password) { u.password = 'demo123'; needsSave = true; }
+      if(!u.notifications) { u.notifications = []; needsSave = true; }
+    });
+    if(needsSave) localStorage.setItem('app_master_db', JSON.stringify(data));
+    
+    return data;
+  }
+
+  function setData(data) {
+    localStorage.setItem('app_master_db', JSON.stringify(data));
+  }
+
+  let chartInstance = null;
+  function initDashboard() {
+    const data = getData();
+    
+    let dailyActive = localStorage.getItem('app_daily_active');
+    const today = new Date().toDateString();
+    if(dailyActive) {
+      dailyActive = JSON.parse(dailyActive);
+      if(dailyActive.date !== today) dailyActive = { date: today, count: data.users.length };
+    } else {
+      dailyActive = { date: today, count: data.users.length };
+    }
+    localStorage.setItem('app_daily_active', JSON.stringify(dailyActive));
+
+    let totalEarning = 0;
+    data.users.forEach(u => {
+      const confirmedWithdrawals = (u.withdrawHistory || []).filter(w => w.status === 'confirm').reduce((sum, w) => sum + w.amount, 0);
+      const currentBalance = u.balance || 0;
+      totalEarning += (confirmedWithdrawals + currentBalance);
+    });
+
+    let pendingBalance = 0;
+    let confirmedBalance = 0;
+    let rejectedBalance = 0;
+
+    data.users.forEach(u => {
+      (u.withdrawHistory || []).forEach(w => {
+        if (w.status === 'pending') pendingBalance += w.amount;
+        else if (w.status === 'confirm') confirmedBalance += w.amount;
+        else if (w.status === 'rejected') rejectedBalance += w.amount;
+      });
+    });
+
+    const totalBalance = data.users.reduce((sum, u) => sum + (u.balance || 0), 0);
+    const pendingWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'pending').length, 0);
+    const confirmedWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'confirm').length, 0);
+    const rejectedWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'rejected').length, 0);
+    const totalRefer = data.users.reduce((sum, u) => sum + (u.totalRef || 0), 0);
+    const referEarning = data.users.reduce((sum, u) => sum + (u.refIncome || 0), 0);
+
+    document.getElementById('statActive').innerText = dailyActive.count;
+    document.getElementById('statUsers').innerText = data.users.length;
+    document.getElementById('statTotalEarning').innerText = totalEarning.toFixed(2);
+    document.getElementById('statBalance').innerText = totalBalance.toFixed(2);
+    
+    document.getElementById('statPendingBalance').innerText = pendingBalance.toFixed(2);
+    document.getElementById('statConfirmedBalance').innerText = confirmedBalance.toFixed(2);
+    document.getElementById('statRejectedBalance').innerText = rejectedBalance.toFixed(2);
+
+    document.getElementById('statWithdrawals').innerText = pendingWithdrawalsCount;
+    document.getElementById('statConfirmed').innerText = confirmedWithdrawalsCount;
+    document.getElementById('statRejected').innerText = rejectedWithdrawalsCount;
+    document.getElementById('statTotalRefer').innerText = totalRefer;
+    document.getElementById('statReferEarning').innerText = referEarning.toFixed(2);
+
+    loadActivityLogs();
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'App Activity', data: [12, 19, 3, 5, 2, 3, 10], borderColor: '#4f46e5', tension: 0.4, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.1)' }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  function loadActivityLogs() {
+    const data = getData();
+    const logs = data.activityLogs || [];
+    const tbody = document.querySelector('#activityLogTable tbody');
+    
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#6b7280;">এখনো কোনো অ্যাক্টিভিটি নেই</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+      const user = data.users.find(u => u.id === log.userId);
+      const avatarUrl = user && user.photo ? user.photo : `https://ui-avatars.com/api/?name=${log.userName.charAt(0)}&background=667eea&color=fff`;
+      
+      let displayTime = log.time;
+      if (log.time && log.time.includes(':') && !log.time.includes('AM') && !log.time.includes('PM')) {
+        const parts = log.time.split(' ');
+        if (parts.length >= 2) {
+          const datePart = parts[0];
+          const timePart = parts[1];
+          const timeSplit = timePart.split(':');
+          
+          if (timeSplit.length >= 2) {
+            let h = parseInt(timeSplit[0]);
+            const m = timeSplit[1];
+            const s = timeSplit.length > 2 ? timeSplit[2] : '00';
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12;
+            displayTime = `${datePart} ${String(h).padStart(2, '0')}:${m}:${s} ${ampm}`;
+          }
+        }
+      }
+      
+      return `
+        <tr>
+          <td>
+            <div class="user-info-cell">
+              <img src="${avatarUrl}" alt="${log.userName}">
+              <span><b>${log.userName}</b></span>
+            </div>
+          </td>
+          <td>${log.phone}</td>
+          <td><span style="background: #e0e7ff; color: #4f46e5; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold;">${log.action}</span></td>
+          <td style="font-size: 12px; color: #6b7280;">${displayTime}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function loadUsers() {
+    const data = getData();
+    const tbody = document.querySelector('#userTable tbody');
+    const search = (document.getElementById('searchUser').value || '').toLowerCase();
+    
+    // ✅ ইমেইল দিয়েও সার্চ করা যাবে
+    const filtered = data.users.filter(u => 
+      u.name.toLowerCase().includes(search) || 
+      u.phone.toLowerCase().includes(search) ||
+      (u.email && u.email.toLowerCase().includes(search))
+    );
+
+    if(filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#6b7280;">No users found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(u => {
+      const avatarUrl = u.photo || `https://ui-avatars.com/api/?name=${u.name.charAt(0)}&background=667eea&color=fff`;
+      return `
+      <tr>
+        <td><div class="user-info-cell"><img src="${avatarUrl}" alt="${u.name}"><span><b>${u.name}</b></span></div></td>
+        <td>${u.phone}</td>
+        <td>${u.email || 'N/A'}</td>
+        <td>৳${(u.balance || 0).toFixed(2)}</td>
+        <td>${u.totalRef || 0}</td>
+        <td><span class="status ${u.isBlocked ? 'rejected' : 'confirm'}">${u.isBlocked ? 'Blocked' : 'Active'}</span></td>
+        <td>
+          <button class="btn-sm" style="background:#3b82f6;" onclick="openEditUserModal(${u.id})">✏️ Edit</button>
+          <button class="btn-sm" style="background:${u.isBlocked ? '#10b981' : '#f59e0b'};" onclick="toggleBlock(${u.id})">${u.isBlocked ? '🔓 Unblock' : '🔒 Block'}</button>
+          <button class="btn-sm" style="background:#ef4444;" onclick="deleteUser(${u.id})">🗑️ Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function searchUser() { loadUsers(); }
+  function toggleBlock(id) {
+    const data = getData();
+    const user = data.users.find(u => u.id === id);
+    if(user) { user.isBlocked = !user.isBlocked; setData(data); loadUsers(); showToast(`User ${user.isBlocked ? 'blocked' : 'unblocked'}!`); }
+  }
+  function deleteUser(id) {
+    if(!confirm('Are you sure you want to delete this user permanently?')) return;
+    const data = getData();
+    data.users = data.users.filter(u => u.id !== id);
+    setData(data); loadUsers(); showToast('🗑️ User deleted!', '#ef4444');
+  }
+  function openAddUserModal() {
+    document.getElementById('userModalTitle').innerText = '➕ Add New User';
+    document.getElementById('editUserId').value = ''; 
+    document.getElementById('editName').value = '';
+    document.getElementById('editPhone').value = ''; 
+    document.getElementById('editEmail').value = ''; // ✅
+    document.getElementById('editPassword').value = '';
+    document.getElementById('editBalance').value = 0; 
+    document.getElementById('userModal').classList.add('active');
+  }
+  function openEditUserModal(id) {
+    const data = getData(); const user = data.users.find(u => u.id === id); if(!user) return;
+    document.getElementById('userModalTitle').innerText = '✏️ Edit User';
+    document.getElementById('editUserId').value = user.id; 
+    document.getElementById('editName').value = user.name;
+    document.getElementById('editPhone').value = user.phone; 
+    document.getElementById('editEmail').value = user.email || ''; // ✅
+    document.getElementById('editPassword').value = user.password || '';
+    document.getElementById('editBalance').value = user.balance || 0; 
+    document.getElementById('userModal').classList.add('active');
+  }
+  function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
+  function saveUser() {
+    const data = getData();
+    const id = document.getElementById('editUserId').value;
+    const name = document.getElementById('editName').value.trim();
+    const phone = document.getElementById('editPhone').value.trim();
+    const email = document.getElementById('editEmail').value.trim(); // ✅
+    const password = document.getElementById('editPassword').value.trim();
+    const balance = parseFloat(document.getElementById('editBalance').value) || 0;
+    
+    if(!name || !phone || !password) return showToast('All fields are required!', '#ef4444');
+
+    if(id) {
+      const user = data.users.find(u => u.id == id);
+      if(user) { 
+        user.name = name; 
+        user.phone = phone; 
+        user.email = email; // ✅
+        user.password = password; 
+        user.balance = balance; 
+      }
+    } else {
+      const newUser = { 
+        id: Date.now(), name, phone, email, password, balance, 
+        isBlocked: false, totalRef: 0, refIncome: 0, 
+        withdrawHistory: [], notifications: [], 
+        spinUsed: 0, scratchUsed: 0, quizUsed: 0, captchaUsed: 0, 
+        visitUsed: [], videoUsed: [], lastClaimDate: '', lastResetDate: '', 
+        joinDate: new Date().toLocaleDateString() 
+      };
+      data.users.push(newUser);
+    }
+    setData(data); closeUserModal(); loadUsers(); showToast(`✅ User ${id ? 'updated' : 'added'} successfully!`, '#10b981');
+  }
+
+  function loadWithdrawals() {
+    const data = getData();
+    const tbody = document.querySelector('#withdrawTable tbody');
+    const filter = document.getElementById('filterWithdrawStatus').value;
+    let allWithdraws = [];
+    data.users.forEach(u => { (u.withdrawHistory || []).forEach((w, idx) => { allWithdraws.push({ ...w, userName: u.name, userPhoto: u.photo, userId: u.id, withdrawIdx: idx }); }); });
+    if(filter !== 'all') allWithdraws = allWithdraws.filter(w => w.status === filter);
+    allWithdraws.sort((a, b) => { if(a.status === 'pending' && b.status !== 'pending') return -1; if(a.status !== 'pending' && b.status === 'pending') return 1; return 0; });
+
+    if(allWithdraws.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No withdrawal requests found</td></tr>'; return; }
+    tbody.innerHTML = allWithdraws.map(w => {
+      let actionBtn = '';
+      if(w.status === 'pending') actionBtn = `<button class="btn-sm" style="background:#10b981;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'confirm')">✔️ Confirm</button><button class="btn-sm" style="background:#ef4444;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'rejected')">✖️ Reject</button>`;
+      else if(w.status === 'confirm') actionBtn = `<span style="color:#10b981; font-weight:bold;">✔️ Confirmed</span>`;
+      else actionBtn = `<span style="color:#ef4444; font-weight:bold;">✖️ Rejected</span>`;
+      const avatarUrl = w.userPhoto || `https://ui-avatars.com/api/?name=${w.userName.charAt(0)}&background=667eea&color=fff`;
+      return `<tr><td><div class="user-info-cell"><img src="${avatarUrl}" alt="${w.userName}"><span><b>${w.userName}</b></span></div></td><td>${w.method}</td><td>${w.number}</td><td>৳${w.amount}</td><td>${formatDate(w.date)}</td><td><span class="status ${w.status}">${w.status}</span></td><td>${actionBtn}</td></tr>`;
+    }).join('');
+  }
+
+  function updateWithdrawStatus(userId, withdrawIdx, newStatus) {
+    const data = getData(); const user = data.users.find(u => u.id === userId); if(!user || !user.withdrawHistory) return;
+    const request = user.withdrawHistory[withdrawIdx]; if(!request) return;
+    if(newStatus === 'rejected' && request.status === 'pending') user.balance = (user.balance || 0) + request.amount;
+    request.status = newStatus;
+    user.notifications = user.notifications || [];
+    const now = new Date();
+    const timeStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2,'0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    if(newStatus === 'confirm') user.notifications.push({ id: Date.now(), msg: `✅ আপনার ৳${request.amount} উইথড্র রিকোয়েস্ট (${request.method}) অনুমোদিত হয়েছে!`, date: timeStr });
+    else user.notifications.push({ id: Date.now(), msg: `❌ আপনার ৳${request.amount} উইথড্র রিকোয়েস্ট (${request.method}) বাতিল হয়েছে। টাকা ফেরত দেওয়া হয়েছে।`, date: timeStr });
+    setData(data); loadWithdrawals(); initDashboard();
+    showToast(`${newStatus === 'confirm' ? '✅ Approved' : '❌ Rejected'}: ৳${request.amount} for ${user.name}`, newStatus === 'confirm' ? '#10b981' : '#ef4444');
+  }
+
+  // ================= ✅ Withdraw Methods Management =================
+  function loadMethods() {
+    const data = getData();
+    const container = document.getElementById('methodListContainer');
+    const methods = data.config.withdrawMethods;
+    if(!methods || methods.length === 0) { container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No methods found. Please add one.</p>'; return; }
+    container.innerHTML = methods.map((m, i) => `
+      <div class="method-item">
+        <div style="display:flex; align-items:center; gap:10px;">
+          ${m.logo ? `<img src="${m.logo}" alt="${m.name}">` : `<span style="font-size:20px;">🏦</span>`}
+          <div><b>${m.name}</b><br><small style="color:#6b7280;">Min: ৳${m.minAmount} | Input: ${m.inputType === 'number' ? 'Phone Number' : 'Text/Address'}</small></div>
+        </div>
+        <div>
+          <button class="btn-sm" style="background:#3b82f6;" onclick="openEditMethodModal(${i})">✏️ Edit</button>
+          <button class="btn-sm" style="background:#ef4444;" onclick="deleteMethod(${i})">🗑️ Delete</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function openMethodModal() {
+    document.getElementById('methodModalTitle').innerText = '➕ Add New Withdraw Method';
+    document.getElementById('editMethodIdx').value = ''; document.getElementById('mName').value = '';
+    document.getElementById('mLogo').value = ''; document.getElementById('mMinAmount').value = '50';
+    document.getElementById('mInputType').value = 'number'; document.getElementById('methodModal').classList.add('active');
+  }
+  function openEditMethodModal(idx) {
+    const data = getData(); const method = data.config.withdrawMethods[idx]; if(!method) return;
+    document.getElementById('methodModalTitle').innerText = '✏️ Edit Withdraw Method';
+    document.getElementById('editMethodIdx').value = idx; document.getElementById('mName').value = method.name;
+    document.getElementById('mLogo').value = method.logo || ''; document.getElementById('mMinAmount').value = method.minAmount;
+    document.getElementById('mInputType').value = method.inputType; document.getElementById('methodModal').classList.add('active');
+  }
+  function closeMethodModal() { document.getElementById('methodModal').classList.remove('active'); }
+  function saveMethod() {
+    const data = getData(); const idx = document.getElementById('editMethodIdx').value;
+    const name = document.getElementById('mName').value.trim(); const logo = document.getElementById('mLogo').value.trim();
+    const minAmount = parseFloat(document.getElementById('mMinAmount').value) || 50; const inputType = document.getElementById('mInputType').value;
+    if(!name) return showToast('Method Name is required!', '#ef4444');
+    const methodObj = { id: Date.now().toString(), name, logo, minAmount, inputType };
+    if(idx !== '') { data.config.withdrawMethods[idx] = methodObj; showToast('✅ Method updated!', '#10b981'); }
+    else { data.config.withdrawMethods.push(methodObj); showToast('✅ New Method added!', '#10b981'); }
+    setData(data); closeMethodModal(); loadMethods();
+  }
+  function deleteMethod(idx) {
+    if(!confirm('Are you sure you want to delete this method?')) return;
+    const data = getData(); data.config.withdrawMethods.splice(idx, 1);
+    setData(data); loadMethods(); showToast('🗑️ Method deleted!', '#ef4444');
+  }
+
+  // ================= Config Settings =================
+  function loadConfig() {
+    const c = getData().config;
+    document.getElementById('cfgDailyClaim').value = c.dailyClaim;
+    document.getElementById('cfgRefBonus').value = c.refBonus;
+    document.getElementById('cfgMinWithdraw').value = c.minWithdraw;
+    document.getElementById('cfgSpinMax').value = c.spinMax;
+    document.getElementById('cfgScratchMax').value = c.scratchMax;
+    document.getElementById('cfgQuizReward').value = c.quizReward;
+    document.getElementById('cfgCaptchaReward').value = c.captchaReward;
+    document.getElementById('cfgVisitReward').value = c.visitReward;
+    document.getElementById('cfgVideoReward').value = c.videoReward;
+    document.getElementById('cfgLimitSpin').value = c.limitSpin;
+    document.getElementById('cfgLimitScratch').value = c.limitScratch;
+    document.getElementById('cfgLimitQuiz').value = c.limitQuiz;
+    document.getElementById('cfgLimitCaptcha').value = c.limitCaptcha;
+    document.getElementById('cfgLimitVisit').value = c.limitVisit;
+    document.getElementById('cfgLimitVideo').value = c.limitVideo;
+    document.getElementById('cfgAdUrl').value = c.adUrl;
+    document.getElementById('cfgAdDuration').value = c.adDuration;
+  }
+  function saveConfig() {
+    const data = getData();
+    data.config = {
+      ...data.config,
+      dailyClaim: +document.getElementById('cfgDailyClaim').value, refBonus: +document.getElementById('cfgRefBonus').value,
+      minWithdraw: +document.getElementById('cfgMinWithdraw').value, spinMax: +document.getElementById('cfgSpinMax').value,
+      scratchMax: +document.getElementById('cfgScratchMax').value, quizReward: +document.getElementById('cfgQuizReward').value,
+      captchaReward: +document.getElementById('cfgCaptchaReward').value, visitReward: +document.getElementById('cfgVisitReward').value,
+      videoReward: +document.getElementById('cfgVideoReward').value, limitSpin: +document.getElementById('cfgLimitSpin').value,
+      limitScratch: +document.getElementById('cfgLimitScratch').value, limitQuiz: +document.getElementById('cfgLimitQuiz').value,
+      limitCaptcha: +document.getElementById('cfgLimitCaptcha').value, limitVisit: +document.getElementById('cfgLimitVisit').value,
+      limitVideo: +document.getElementById('cfgLimitVideo').value, adUrl: document.getElementById('cfgAdUrl').value,
+      adDuration: +document.getElementById('cfgAdDuration').value
+    };
+    setData(data); showToast('✅ All Configurations Saved!', '#10b981');
+  }
+
+  // ================= Banner Management =================
+  function loadBanners() {
+    const data = getData(); const container = document.getElementById('bannerListContainer');
+    if(!data.banners || data.banners.length === 0) { container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No banners found. Please add one.</p>'; return; }
+    container.innerHTML = data.banners.map((b, i) => `
+      <div class="banner-preview" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2});">
+        <div><h4>${b.title}</h4><p>${b.subtitle} | Action: ${b.action}</p></div>
+        <div style="display:flex; align-items:center; gap:10px;"><span class="icon">${b.icon}</span>
+          <button class="btn-sm" style="background:#3b82f6;" onclick="openEditBannerModal(${i})">✏️ Edit</button>
+          <button class="btn-sm" style="background:#ef4444;" onclick="deleteBanner(${i})">🗑️ Delete</button>
+        </div>
+      </div>`).join('');
+  }
+  function openBannerModal() {
+    document.getElementById('bannerModalTitle').innerText = '➕ Add New Banner';
+    document.getElementById('editBannerIdx').value = ''; document.getElementById('bTitle').value = '';
+    document.getElementById('bSubtitle').value = ''; document.getElementById('bBtnText').value = '';
+    document.getElementById('bAction').value = 'referModal'; document.getElementById('bIcon').value = '🎁';
+    document.getElementById('bColor1').value = '#667eea'; document.getElementById('bColor2').value = '#764ba2';
+    document.getElementById('bannerModal').classList.add('active');
+  }
+  function openEditBannerModal(idx) {
+    const data = getData(); const b = data.banners[idx]; if(!b) return;
+    document.getElementById('bannerModalTitle').innerText = '✏️ Edit Banner';
+    document.getElementById('editBannerIdx').value = idx; document.getElementById('bTitle').value = b.title;
+    document.getElementById('bSubtitle').value = b.subtitle; document.getElementById('bBtnText').value = b.btnText || '';
+    document.getElementById('bAction').value = b.action; document.getElementById('bIcon').value = b.icon;
+    document.getElementById('bColor1').value = b.color1; document.getElementById('bColor2').value = b.color2;
+    document.getElementById('bannerModal').classList.add('active');
+  }
+  function closeBannerModal() { document.getElementById('bannerModal').classList.remove('active'); }
+  function saveBanner() {
+    const data = getData(); const idx = document.getElementById('editBannerIdx').value;
+    const bannerObj = {
+      title: document.getElementById('bTitle').value.trim(), subtitle: document.getElementById('bSubtitle').value.trim(),
+      btnText: document.getElementById('bBtnText').value.trim(), action: document.getElementById('bAction').value,
+      icon: document.getElementById('bIcon').value, color1: document.getElementById('bColor1').value, color2: document.getElementById('bColor2').value
+    };
+    if(!bannerObj.title || !bannerObj.subtitle) return showToast('Title and Subtitle are required!', '#ef4444');
+    if(idx !== '') { data.banners[idx] = bannerObj; showToast('✅ Banner updated successfully!', '#10b981'); }
+    else { data.banners.push(bannerObj); showToast('✅ New Banner added!', '#10b981'); }
+    setData(data); closeBannerModal(); loadBanners();
+  }
+  function deleteBanner(idx) {
+    if(!confirm('Are you sure you want to delete this banner?')) return;
+    const data = getData(); data.banners.splice(idx, 1); setData(data); loadBanners(); showToast('🗑️ Banner deleted!', '#ef4444');
+  }
+
+  // ================= Fraud Settings =================
+  function loadFraudSettings() {
+    const f = getData().config.fraud;
+    document.getElementById('fraudForceAd').checked = f.forceAd;
+    document.getElementById('fraudVpn').checked = f.vpnBlock;
+    document.getElementById('fraudMultiAccount').checked = f.multiAccountBlock;
+    document.getElementById('fraudMaxIp').value = f.maxAccountsPerIp;
+    document.getElementById('fraudMaxWithdraw').value = f.maxWithdraw;
+    document.getElementById('fraudSpamTimer').value = f.spamTimer;
+  }
+  function saveFraudSettings() {
+    const data = getData();
+    data.config.fraud = {
+      forceAd: document.getElementById('fraudForceAd').checked, vpnBlock: document.getElementById('fraudVpn').checked,
+      multiAccountBlock: document.getElementById('fraudMultiAccount').checked, maxAccountsPerIp: +document.getElementById('fraudMaxIp').value || 1,
+      maxWithdraw: +document.getElementById('fraudMaxWithdraw').value || 1000, spamTimer: +document.getElementById('fraudSpamTimer').value || 5
+    };
+    setData(data); showToast('🛡️ Fraud Settings Saved!', '#ef4444');
+  }
+
+  function loadNotifUsers() {
+    const data = getData(); const select = document.getElementById('notifUserSelect');
+    select.innerHTML = data.users.map(u => `<option value="${u.id}">${u.name} (${u.phone})</option>`).join('');
+  }
+  function sendNotification() {
+    const data = getData(); const userId = +document.getElementById('notifUserSelect').value;
+    const msg = document.getElementById('notifMsg').value;
+    if(!msg) return showToast('Please type a message', '#ef4444');
+    const user = data.users.find(u => u.id === userId); if(!user) return showToast('User not found!', '#ef4444');
+    const now = new Date();
+    const dateTimeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    user.notifications = user.notifications || [];
+    user.notifications.push({ id: Date.now(), msg: msg, date: dateTimeStr });
+    setData(data); document.getElementById('notifMsg').value = ''; showToast(`📢 Notification sent to ${user.name}!`, '#10b981');
+  }
+
+  function changeAdminPassword() {
+    const oldPass = document.getElementById('oldAdminPass').value.trim();
+    const newPass = document.getElementById('newAdminPass').value.trim();
+    const confirmPass = document.getElementById('confirmAdminPass').value.trim();
+    const storedPass = localStorage.getItem('admin_password');
+    if(!oldPass || !newPass || !confirmPass) return showToast('সব ঘর পূরণ করুন!', '#ef4444');
+    if(oldPass !== storedPass) return showToast('পুরনো পাসওয়ার্ড সঠিক নয়!', '#ef4444');
+    if(newPass.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!', '#ef4444');
+    if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!', '#ef4444');
+    localStorage.setItem('admin_password', newPass);
+    document.getElementById('oldAdminPass').value = ''; document.getElementById('newAdminPass').value = ''; document.getElementById('confirmAdminPass').value = '';
+    showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!', '#10b981');
+  }
+
+  function clearAllData() {
+    if(confirm('Are you absolutely sure? This will delete all data permanently!')) {
+      localStorage.removeItem('app_master_db'); showToast('All data cleared! Reloading...', '#ef4444');
+      setTimeout(() => location.reload(), 1500);
+    }
+  }
+</script>
+</body>
+</html>
