@@ -40,6 +40,7 @@
   .stat-card { background: white; padding: 20px 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
   .stat-card h3 { font-size: 13px; color: #6b7280; margin-bottom: 10px; font-weight: 600; }
   .stat-card p { font-size: 22px; font-weight: bold; color: var(--text); }
+  .stat-card .sub-info { font-size: 11px; color: #9ca3af; margin-top: 4px; font-weight: 500; }
   
   .chart-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); height: 300px; }
   
@@ -98,6 +99,91 @@
   .fraud-row .fraud-info small { color: #6b7280; font-size: 12px; line-height: 1.4; display: block; }
   .fraud-row input[type="number"] { width: 110px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; text-align: center; font-weight: bold; color: var(--primary); }
 
+  .coin-badge { background: #fef3c7; color: #92400e; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+  .tk-badge { background: #d1fae5; color: #059669; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+  .rate-info-box { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center; }
+  .rate-info-box h4 { color: #92400e; font-size: 15px; margin-bottom: 5px; }
+  .rate-info-box p { color: #78350f; font-size: 13px; font-weight: 600; }
+
+  /* ✅ Fixed Coin Rate Editor for Mobile */
+  .coin-rate-editor { 
+    background: linear-gradient(135deg, #eff6ff, #dbeafe); 
+    border: 2px solid var(--primary); 
+    border-radius: 12px; 
+    padding: 15px; 
+    margin-bottom: 20px; 
+  }
+  .coin-rate-editor h4 { 
+    color: var(--primary); 
+    font-size: 15px; 
+    margin-bottom: 5px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+  }
+  .coin-rate-editor .desc { 
+    font-size: 12px; 
+    color: #6b7280; 
+    margin-bottom: 15px; 
+    line-height: 1.4;
+  }
+  
+  .coin-rate-editor .rate-inputs { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    gap: 8px; 
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .coin-rate-editor .input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .coin-rate-editor .input-group label {
+    font-size: 11px;
+    color: #4b5563;
+    margin-bottom: 5px;
+    text-align: center;
+    font-weight: 600;
+  }
+  .coin-rate-editor .rate-inputs input { 
+    width: 100%;
+    padding: 12px 8px; 
+    border: 2px solid #93c5fd; 
+    border-radius: 8px; 
+    font-size: 18px; 
+    text-align: center; 
+    font-weight: bold; 
+    color: var(--primary); 
+    box-sizing: border-box;
+  }
+  .coin-rate-editor .equals { 
+    font-size: 20px; 
+    font-weight: bold; 
+    color: var(--primary); 
+    text-align: center;
+    padding-top: 20px;
+  }
+  
+  .coin-rate-editor .preview { 
+    background: white; 
+    padding: 10px; 
+    border-radius: 8px; 
+    text-align: center; 
+    margin-top: 12px; 
+    font-size: 13px; 
+    font-weight: 600; 
+    color: #374151; 
+    border: 1px dashed var(--primary);
+  }
+  .coin-rate-editor .preview b { 
+    color: var(--primary); 
+    font-size: 16px; 
+  }
+
   @media (max-width: 768px) {
     .mobile-topbar { display: flex; }
     .sidebar { position: fixed; left: -260px; height: 100%; }
@@ -111,6 +197,9 @@
     .stat-card { padding: 12px 10px; }
     .stat-card h3 { font-size: 11px; margin-bottom: 5px; }
     .stat-card p { font-size: 18px; }
+    .coin-rate-editor .rate-inputs input { font-size: 16px; padding: 10px 5px; }
+    .coin-rate-editor .equals { font-size: 18px; }
+    .grid-2 { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -148,6 +237,7 @@
         <li onclick="nav('withdrawals')"><span class="icon">💸</span> Withdrawals</li>
         <li onclick="nav('withdrawMethods')"><span class="icon">🏦</span> Withdraw Methods</li>
         <li onclick="nav('tasks')"><span class="icon">🎯</span> Tasks & Rewards</li>
+        <li onclick="nav('coinRate')"><span class="icon">🪙</span> Coin Rate</li>
         <li onclick="nav('banners')"><span class="icon">🖼️</span> Banner Management</li>
         <li onclick="nav('fraud')"><span class="icon">🛡️</span> Fraud Prevention</li>
         <li onclick="nav('notifications')"><span class="icon">🔔</span> Notifications</li>
@@ -165,18 +255,37 @@
         <div class="stats-grid">
           <div class="stat-card"><h3>Daily Active Users</h3><p id="statActive">0</p></div>
           <div class="stat-card"><h3>Total Users</h3><p id="statUsers">0</p></div>
-          <div class="stat-card" style="border-left-color: var(--purple);"><h3>Total Users Earning (৳)</h3><p id="statTotalEarning" style="color: var(--purple);">0.00</p></div>
-          <div class="stat-card"><h3>Total Balance (৳)</h3><p id="statBalance">0.00</p></div>
+          <div class="stat-card" style="border-left-color: var(--orange);">
+            <h3>Total Balance (Coins)</h3>
+            <p id="statBalanceCoins" style="color: var(--orange);">🪙 0</p>
+            <div class="sub-info" id="statBalanceTk">≈ ৳0.00</div>
+          </div>
           
-          <div class="stat-card" style="border-left-color: var(--warning);"><h3>Pending Balance (৳)</h3><p id="statPendingBalance" style="color: var(--warning);">0.00</p></div>
-          <div class="stat-card" style="border-left-color: var(--success);"><h3>Confirmed Balance (৳)</h3><p id="statConfirmedBalance" style="color: var(--success);">0.00</p></div>
-          <div class="stat-card" style="border-left-color: var(--danger);"><h3>Rejected Balance (৳)</h3><p id="statRejectedBalance" style="color: var(--danger);">0.00</p></div>
+          <div class="stat-card" style="border-left-color: var(--warning);">
+            <h3>Pending Balance</h3>
+            <p id="statPendingCoins" style="color: var(--warning);">🪙 0</p>
+            <div class="sub-info" id="statPendingTk">≈ ৳0.00</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--success);">
+            <h3>Confirmed Balance</h3>
+            <p id="statConfirmedCoins" style="color: var(--success);">🪙 0</p>
+            <div class="sub-info" id="statConfirmedTk">≈ ৳0.00</div>
+          </div>
+          <div class="stat-card" style="border-left-color: var(--danger);">
+            <h3>Rejected Balance</h3>
+            <p id="statRejectedCoins" style="color: var(--danger);">🪙 0</p>
+            <div class="sub-info" id="statRejectedTk">≈ ৳0.00</div>
+          </div>
 
           <div class="stat-card"><h3>Pending Withdrawals</h3><p id="statWithdrawals">0</p></div>
           <div class="stat-card" style="border-left-color: var(--success);"><h3>Confirmed Withdrawals</h3><p id="statConfirmed" style="color: var(--success);">0</p></div>
           <div class="stat-card" style="border-left-color: var(--danger);"><h3>Rejected Withdrawals</h3><p id="statRejected" style="color: var(--danger);">0</p></div>
           <div class="stat-card" style="border-left-color: var(--orange);"><h3>Total Refer</h3><p id="statTotalRefer" style="color: var(--orange);">0</p></div>
-          <div class="stat-card" style="border-left-color: var(--warning);"><h3>Refer Earning (৳)</h3><p id="statReferEarning" style="color: var(--warning);">0.00</p></div>
+          <div class="stat-card" style="border-left-color: var(--warning);">
+            <h3>Refer Earning</h3>
+            <p id="statReferCoins" style="color: var(--warning);">🪙 0</p>
+            <div class="sub-info" id="statReferTk">≈ ৳0.00</div>
+          </div>
         </div>
         <div class="chart-container"><canvas id="myChart"></canvas></div>
 
@@ -186,10 +295,10 @@
           <table id="activityLogTable">
             <thead>
               <tr>
-                <th>ইউজার</th>
-                <th>ফোন</th>
-                <th>অ্যাক্টিভিটি</th>
-                <th>সময়</th>
+                <th>User</th>
+                <th>Phone</th>
+                <th>Activity</th>
+                <th>Time</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -206,7 +315,7 @@
             <input type="text" id="searchUser" placeholder="Search by name, phone or email..." onkeyup="searchUser()">
           </div>
           <table id="userTable">
-            <thead><tr><th>User Profile</th><th>Phone</th><th>Email</th><th>Balance</th><th>Referrals</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>User Profile</th><th>Phone</th><th>Email</th><th>Balance (Coins)</th><th>Referrals</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -215,6 +324,7 @@
       <div id="withdrawals" class="page">
         <div class="card">
           <h3>📜 Withdrawal Requests</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">ইউজার কয়েনে উইথড্র রিকোয়েস্ট করে, এখানে কয়েন ও টাকার সমান দেখানো হয়েছে।</p>
           <div class="form-group">
             <label>Filter by Status</label>
             <select id="filterWithdrawStatus" onchange="loadWithdrawals()">
@@ -225,7 +335,7 @@
             </select>
           </div>
           <table id="withdrawTable">
-            <thead><tr><th>User</th><th>Method</th><th>Number</th><th>Amount</th><th>Date & Time</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>User</th><th>Method</th><th>Number</th><th>Coins</th><th>Amount (৳)</th><th>Date & Time</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -234,7 +344,11 @@
       <div id="withdrawMethods" class="page">
         <div class="card">
           <h3>🏦 Manage Withdraw Methods</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে নতুন মেথড অ্যাড, এডিট এবং ডিলিট করতে পারবেন। ইউজার অ্যাপে লাইভ আপডেট হবে।</p>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে নতুন মেথড অ্যাড, এডিট এবং ডিলিট করতে পারবেন। মিনিমাম অ্যামাউন্ট টাকায় দিতে হবে (৳)।</p>
+          <div class="rate-info-box">
+            <h4>💡 বর্তমান কনভার্শন রেট</h4>
+            <p id="withdrawRateInfo">100 Coins = ৳1</p>
+          </div>
           <button class="btn-primary" style="background: var(--success); margin-bottom: 15px;" onclick="openMethodModal()">➕ Add New Method</button>
           <div id="methodListContainer"></div>
         </div>
@@ -243,16 +357,20 @@
       <div id="tasks" class="page">
         <div class="card">
           <h3>Task Configuration (Live Sync)</h3>
+          <div class="rate-info-box">
+            <h4>💡 কয়েন সিস্টেম রেট</h4>
+            <p id="taskRateInfo">100 Coins = ৳1 | নিচের সব রিওয়ার্ড কয়েনে দেওয়া হবে</p>
+          </div>
           <div class="grid-2">
-            <div class="form-group"><label>Daily Claim Reward (৳)</label><input type="number" id="cfgDailyClaim"></div>
-            <div class="form-group"><label>Refer Bonus (৳)</label><input type="number" id="cfgRefBonus"></div>
-            <div class="form-group"><label>Min Withdraw (৳)</label><input type="number" id="cfgMinWithdraw"></div>
-            <div class="form-group"><label>Spin Wheel Max Reward (৳)</label><input type="number" id="cfgSpinMax"></div>
-            <div class="form-group"><label>Scratch Card Max Reward (৳)</label><input type="number" id="cfgScratchMax"></div>
-            <div class="form-group"><label>Quiz Reward (৳)</label><input type="number" id="cfgQuizReward"></div>
-            <div class="form-group"><label>Captcha Reward (৳)</label><input type="number" id="cfgCaptchaReward"></div>
-            <div class="form-group"><label>Visit Website Reward (৳)</label><input type="number" id="cfgVisitReward"></div>
-            <div class="form-group"><label>Watch Video Reward (৳)</label><input type="number" id="cfgVideoReward"></div>
+            <div class="form-group"><label>Daily Claim Reward (Coins 🪙)</label><input type="number" id="cfgDailyClaim"></div>
+            <div class="form-group"><label>Refer Bonus (Coins 🪙)</label><input type="number" id="cfgRefBonus"></div>
+            <div class="form-group"><label>Min Withdraw (৳ Tk)</label><input type="number" id="cfgMinWithdraw"></div>
+            <div class="form-group"><label>Spin Wheel Max Reward (Coins 🪙)</label><input type="number" id="cfgSpinMax"></div>
+            <div class="form-group"><label>Scratch Card Max Reward (Coins 🪙)</label><input type="number" id="cfgScratchMax"></div>
+            <div class="form-group"><label>Quiz Reward (Coins 🪙)</label><input type="number" id="cfgQuizReward"></div>
+            <div class="form-group"><label>Captcha Reward (Coins 🪙)</label><input type="number" id="cfgCaptchaReward"></div>
+            <div class="form-group"><label>Visit Website Reward (Coins 🪙)</label><input type="number" id="cfgVisitReward"></div>
+            <div class="form-group"><label>Watch Video Reward (Coins 🪙)</label><input type="number" id="cfgVideoReward"></div>
           </div>
           <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">Daily Task Limits</h4>
           <div class="grid-2">
@@ -270,6 +388,47 @@
         </div>
       </div>
 
+      <div id="coinRate" class="page">
+        <div class="card">
+          <h3>🪙 Coin Conversion Rate Management</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">
+            এখান থেকে কয়েন থেকে টাকার কনভার্শন রেট পরিবর্তন করতে পারবেন। এই রেট ইউজার অ্যাপের সব জায়গায় লাইভ আপডেট হবে (ব্যালেন্স, উইথড্র, মিনিমাম লিমিট ইত্যাদি)।
+          </p>
+
+          <div class="coin-rate-editor">
+            <h4>💱 কনভার্শন রেট সেট করুন</h4>
+            <p class="desc">উদাহরণ: "100 Coins = ৳1" সেট করতে বামে 100 এবং ডানে 1 দিন</p>
+            
+            <div class="rate-inputs">
+              <div class="input-group">
+                <label>Coins</label>
+                <input type="number" id="cfgCoinsPerTk" value="100" min="1" oninput="updateRatePreview()">
+              </div>
+              
+              <div class="equals">=</div>
+              
+              <div class="input-group">
+                <label>টাকা (৳)</label>
+                <input type="number" id="cfgTkPerBlock" value="1" min="0.01" step="0.01" oninput="updateRatePreview()">
+              </div>
+            </div>
+            
+            <div class="preview" id="ratePreviewBox">
+              📌 Preview: <b id="ratePreviewText">100 Coins = ৳1</b>
+            </div>
+          </div>
+
+          <button class="btn-primary" style="background: var(--success);" onclick="saveCoinRate()">💾 Save Coin Rate</button>
+
+          <div class="rate-info-box" style="margin-top: 20px;">
+            <h4>📊 রেট ক্যালকুলেশন উদাহরণ</h4>
+            <div id="rateExamples" style="text-align: left; margin-top: 10px; font-size: 13px; line-height: 1.8;">
+              <!-- Filled dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="banners" class="page">
         <div class="card">
           <h3>🖼️ Slider Banner Management</h3>
@@ -282,53 +441,54 @@
       <div id="fraud" class="page">
         <div class="card">
           <h3>🛡️ Fraud Prevention Settings</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">এখান থেকে ইউজারদের প্রতারণা নিয়ন্ত্রণ করুন। এই সেটিংস ইউজার অ্যাপে লাইভ কাজ করবে।</p>
           
           <div class="fraud-row">
             <div class="fraud-info">
               <b>Force Ad Watch</b>
-              <small>ইউজারকে অ্যাড না দেখে টাস্ক করতে দেবে না।</small>
+              <small>ইউজারকে বিজ্ঞাপন না দেখে কোনো টাস্ক বা রিওয়ার্ড নিতে দেবে না। (Force Ad Watch)</small>
             </div>
             <label class="switch"><input type="checkbox" id="fraudForceAd"><span class="slider"></span></label>
           </div>
 
           <div class="fraud-row">
             <div class="fraud-info">
-              <b>Disable VPN Access</b>
-              <small>ভিপিএন ব্যবহার করলে অ্যাপ ব্লক হবে।</small>
+              <b>Spam Timer (Seconds)</b>
+              <small>একটি টাস্ক শেষ করে পরের টাস্ক কত সেকেন্ড পর করা যাবে। (যেমন: 5)</small>
             </div>
-            <label class="switch"><input type="checkbox" id="fraudVpn"><span class="slider"></span></label>
+            <input type="number" id="fraudSpamTimer" value="5" min="0">
           </div>
 
           <div class="fraud-row">
             <div class="fraud-info">
-              <b>Block Multiple Accounts</b>
-              <small>একই ডিভাইসে একাধিক অ্যাকাউন্ট ব্লক।</small>
+              <b>Maximum Withdraw Limit (৳)</b>
+              <small>একবারে সর্বোচ্চ কত টাকা (Tk) উইথড্র করা যাবে।</small>
+            </div>
+            <input type="number" id="fraudMaxWithdraw" value="1000" min="1">
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>Block Multi Account</b>
+              <small>একই ফোন নাম্বার বা ইমেইল দিয়ে একাধিক অ্যাকাউন্ট খোলা ব্লক। (শুধু মেসেজ দেখাবে, নাম্বার ডুপ্লিকেট রেজিস্ট্রেশন আগেই বন্ধ)</small>
             </div>
             <label class="switch"><input type="checkbox" id="fraudMultiAccount"><span class="slider"></span></label>
           </div>
 
           <div class="fraud-row">
             <div class="fraud-info">
-              <b>প্রতি আইপিতে সর্বোচ্চ অ্যাকাউন্ট</b>
-              <small>একটি আইপি থেকে সর্বোচ্চ কয়টি অ্যাকাউন্ট খোলা যাবে।</small>
+              <b>Show VPN Warning</b>
+              <small>ইউজার অ্যাপে ভিপিএন ব্যবহার করলে সতর্কবার্তা দেখাবে।</small>
             </div>
-            <input type="number" id="fraudMaxIp" value="1">
+            <label class="switch"><input type="checkbox" id="fraudVpn"><span class="slider"></span></label>
           </div>
 
           <div class="fraud-row">
             <div class="fraud-info">
-              <b>সর্বোচ্চ উইথড্র লিমিট (৳)</b>
-              <small>একবারে সর্বোচ্চ কত টাকা উইথড্র করা যাবে।</small>
+              <b>Max Accounts Per IP (Info)</b>
+              <small>শুধু তথ্যের জন্য, মেইন সিস্টেমে আইপি ট্র্যাকিং নেই।</small>
             </div>
-            <input type="number" id="fraudMaxWithdraw" value="1000">
-          </div>
-
-          <div class="fraud-row">
-            <div class="fraud-info">
-              <b>স্প্যাম টাইমার (সেকেন্ড)</b>
-              <small>একটি টাস্ক শেষ করে পরের টাস্ক কত সেকেন্ড পর করা যাবে।</small>
-            </div>
-            <input type="number" id="fraudSpamTimer" value="5">
+            <input type="number" id="fraudMaxIp" value="1" min="1">
           </div>
 
           <button class="btn-primary" style="background: var(--danger); margin-top: 20px;" onclick="saveFraudSettings()">🛡️ Save Fraud Settings</button>
@@ -347,6 +507,16 @@
             <input type="text" id="notifMsg" placeholder="Type your notification message...">
           </div>
           <button class="btn-primary" onclick="sendNotification()">📢 Send Notification</button>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+          <h3>Send Notification to All Users</h3>
+          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">সকল ইউজারকে একসাথে একটি মেসেজ পাঠান।</p>
+          <div class="form-group">
+            <label>Message for All Users</label>
+            <input type="text" id="notifAllMsg" placeholder="Type your message for all users...">
+          </div>
+          <button class="btn-primary" style="background: var(--orange);" onclick="sendNotificationToAll()">📢 Send to All Users</button>
         </div>
       </div>
 
@@ -378,9 +548,9 @@
     <input type="hidden" id="editUserId">
     <div class="form-group"><label>Name</label><input type="text" id="editName"></div>
     <div class="form-group"><label>Phone</label><input type="text" id="editPhone"></div>
-    <div class="form-group"><label>Email</label><input type="email" id="editEmail"></div> <!-- ✅ নতুন ইমেইল ফিল্ড -->
+    <div class="form-group"><label>Email</label><input type="email" id="editEmail"></div>
     <div class="form-group"><label>Password</label><input type="text" id="editPassword"></div>
-    <div class="form-group"><label>Balance (৳)</label><input type="number" id="editBalance"></div>
+    <div class="form-group"><label>Balance (Coins 🪙)</label><input type="number" id="editBalance"></div>
     <div class="grid-2">
       <button class="btn-primary" style="background:#6b7280; margin-top:0;" onclick="closeUserModal()">Cancel</button>
       <button class="btn-primary" style="background: var(--success); margin-top:0;" onclick="saveUser()">Save</button>
@@ -393,7 +563,7 @@
     <h3 id="bannerModalTitle">➕ Add New Banner</h3>
     <input type="hidden" id="editBannerIdx">
     <div class="form-group"><label>Title (শিরোনাম)</label><input type="text" id="bTitle" placeholder="যেমন: রেফার করে কামান"></div>
-    <div class="form-group"><label>Subtitle (বর্ণনা)</label><input type="text" id="bSubtitle" placeholder="যেমন: বন্ধুদের রেফার করে পান ৳50 বোনাস!"></div>
+    <div class="form-group"><label>Subtitle (বর্ণনা)</label><input type="text" id="bSubtitle" placeholder="যেমন: বন্ধুদের রেফার করে পান 🪙50 কয়েন বোনাস!"></div>
     <div class="form-group"><label>Button Text</label><input type="text" id="bBtnText" placeholder="যেমন: এখনই রেফার করুন →"></div>
     <div class="form-group">
       <label>Button Action (কোন পেজে যাবে)</label>
@@ -413,7 +583,7 @@
       <select id="bIcon">
         <option value="🎁">🎁 Gift</option><option value="🎡">🎡 Wheel</option><option value="📺">📺 Video</option>
         <option value="🎫">🎫 Ticket</option><option value="💰">💰 Money</option><option value="🏆">🏆 Trophy</option>
-        <option value="🔗">🔗 Link</option><option value="🌟">🌟 Star</option>
+        <option value="🔗">🔗 Link</option><option value="🌟">🌟 Star</option><option value="🪙">🪙 Coin</option>
       </select>
     </div>
     <div class="grid-2">
@@ -433,7 +603,8 @@
     <input type="hidden" id="editMethodIdx">
     <div class="form-group"><label>Method Name</label><input type="text" id="mName" placeholder="যেমন: Bkash, Nagad, Rocket"></div>
     <div class="form-group"><label>Logo URL (Optional)</label><input type="text" id="mLogo" placeholder="https://example.com/logo.png"></div>
-    <div class="form-group"><label>Minimum Amount (৳)</label><input type="number" id="mMinAmount" placeholder="50"></div>
+    <div class="form-group"><label>Minimum Amount (৳ Tk)</label><input type="number" id="mMinAmount" placeholder="1"></div>
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 10px;" id="methodRateInfo">💡 নোট: 100 Coins = ৳1 | আপনার দেওয়া টাকার মান × 100 = ইউজারের কয়েন লিমিট</p>
     <div class="form-group">
       <label>Input Type (ইউজার কী ইনপুট দেবে)</label>
       <select id="mInputType">
@@ -458,6 +629,30 @@
   document.addEventListener('focusout', (e) => {
     if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') isTyping = false;
   });
+
+  // ================= ✅ Dynamic Coin System =================
+  let COINS_PER_TK = 100;
+  let TK_PER_COIN_BLOCK = 1;
+
+  function loadRatesFromConfig() {
+    const data = getData();
+    if(data.config && data.config.coinSystem) {
+      COINS_PER_TK = data.config.coinSystem.coinsPerTk || 100;
+      TK_PER_COIN_BLOCK = data.config.coinSystem.tkPerCoinsBlock || 1;
+    }
+  }
+
+  function coinsToTk(coins) {
+    if(!COINS_PER_TK || COINS_PER_TK <= 0) return 0;
+    return ((coins || 0) / COINS_PER_TK) * TK_PER_COIN_BLOCK;
+  }
+  function tkToCoins(tk) {
+    if(!TK_PER_COIN_BLOCK || TK_PER_COIN_BLOCK <= 0) return 0;
+    return Math.floor(((tk || 0) / TK_PER_COIN_BLOCK) * COINS_PER_TK);
+  }
+  function getRateText() {
+    return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN_BLOCK}`;
+  }
 
   setTimeout(() => {
     document.getElementById('splash').style.opacity = '0';
@@ -502,6 +697,7 @@
     if(pageId === 'withdrawals') loadWithdrawals();
     if(pageId === 'withdrawMethods') loadMethods();
     if(pageId === 'tasks') loadConfig();
+    if(pageId === 'coinRate') loadCoinRate();
     if(pageId === 'banners') loadBanners();
     if(pageId === 'fraud') loadFraudSettings();
     if(pageId === 'notifications') loadNotifUsers();
@@ -528,20 +724,21 @@
     spinMax: 15, scratchMax: 15, quizReward: 2, captchaReward: 1, visitReward: 2, videoReward: 3,
     limitSpin: 10, limitScratch: 10, limitQuiz: 10, limitCaptcha: 10, limitVisit: 10, limitVideo: 10,
     adUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', adDuration: 15,
+    coinSystem: { coinsPerTk: 100, tkPerCoinsBlock: 1 },
     fraud: { forceAd: true, vpnBlock: false, multiAccountBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 },
     withdrawMethods: [
-      { id: 'recharge', name: 'Mobile Recharge', logo: 'https://cdn-icons-png.flaticon.com/512/3595/3595255.png', minAmount: 50, inputType: 'number' },
-      { id: 'bkash', name: 'Bkash', logo: 'https://download.logo.wine/logo/BKash/BKash-Logo.wine.png', minAmount: 50, inputType: 'number' },
-      { id: 'nagad', name: 'Nagad', logo: 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png', minAmount: 50, inputType: 'number' },
+      { id: 'recharge', name: 'Mobile Recharge', logo: 'https://cdn-icons-png.flaticon.com/512/3595/3595255.png', minAmount: 1, inputType: 'number' },
+      { id: 'bkash', name: 'Bkash', logo: 'https://download.logo.wine/logo/BKash/BKash-Logo.wine.png', minAmount: 1, inputType: 'number' },
+      { id: 'nagad', name: 'Nagad', logo: 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png', minAmount: 1, inputType: 'number' },
       { id: 'usdt', name: 'USDT (TRC20)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', minAmount: 1, inputType: 'text' }
     ]
   };
 
   const defaultBanners = [
-    { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান ৳50 বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
-    { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন ৳15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
-    { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটিটি ভিডিওতে পান ৳3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
-    { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন ৳15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
+    { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান 🪙50 কয়েন বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
+    { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
+    { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটিটি ভিডিওতে পান 🪙3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
+    { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
   ];
 
   function getData() {
@@ -557,6 +754,7 @@
     }
     if(!data.config) data.config = defaultConfig;
     if(!data.config.fraud) data.config.fraud = defaultConfig.fraud;
+    if(!data.config.coinSystem) data.config.coinSystem = defaultConfig.coinSystem;
     if(!data.config.withdrawMethods || !Array.isArray(data.config.withdrawMethods) || data.config.withdrawMethods.length === 0) {
       data.config.withdrawMethods = defaultConfig.withdrawMethods;
     }
@@ -583,6 +781,7 @@
   let chartInstance = null;
   function initDashboard() {
     const data = getData();
+    loadRatesFromConfig();
     
     let dailyActive = localStorage.getItem('app_daily_active');
     const today = new Date().toDateString();
@@ -594,46 +793,47 @@
     }
     localStorage.setItem('app_daily_active', JSON.stringify(dailyActive));
 
-    let totalEarning = 0;
-    data.users.forEach(u => {
-      const confirmedWithdrawals = (u.withdrawHistory || []).filter(w => w.status === 'confirm').reduce((sum, w) => sum + w.amount, 0);
-      const currentBalance = u.balance || 0;
-      totalEarning += (confirmedWithdrawals + currentBalance);
-    });
-
-    let pendingBalance = 0;
-    let confirmedBalance = 0;
-    let rejectedBalance = 0;
+    let pendingCoins = 0;
+    let confirmedCoins = 0;
+    let rejectedCoins = 0;
 
     data.users.forEach(u => {
       (u.withdrawHistory || []).forEach(w => {
-        if (w.status === 'pending') pendingBalance += w.amount;
-        else if (w.status === 'confirm') confirmedBalance += w.amount;
-        else if (w.status === 'rejected') rejectedBalance += w.amount;
+        if (w.status === 'pending') pendingCoins += w.amount;
+        else if (w.status === 'confirm') confirmedCoins += w.amount;
+        else if (w.status === 'rejected') rejectedCoins += w.amount;
       });
     });
 
-    const totalBalance = data.users.reduce((sum, u) => sum + (u.balance || 0), 0);
+    const totalCoins = data.users.reduce((sum, u) => sum + (u.balance || 0), 0);
     const pendingWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'pending').length, 0);
     const confirmedWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'confirm').length, 0);
     const rejectedWithdrawalsCount = data.users.reduce((sum, u) => sum + (u.withdrawHistory || []).filter(w => w.status === 'rejected').length, 0);
     const totalRefer = data.users.reduce((sum, u) => sum + (u.totalRef || 0), 0);
-    const referEarning = data.users.reduce((sum, u) => sum + (u.refIncome || 0), 0);
+    const referCoins = data.users.reduce((sum, u) => sum + (u.refIncome || 0), 0);
 
     document.getElementById('statActive').innerText = dailyActive.count;
     document.getElementById('statUsers').innerText = data.users.length;
-    document.getElementById('statTotalEarning').innerText = totalEarning.toFixed(2);
-    document.getElementById('statBalance').innerText = totalBalance.toFixed(2);
     
-    document.getElementById('statPendingBalance').innerText = pendingBalance.toFixed(2);
-    document.getElementById('statConfirmedBalance').innerText = confirmedBalance.toFixed(2);
-    document.getElementById('statRejectedBalance').innerText = rejectedBalance.toFixed(2);
+    document.getElementById('statBalanceCoins').innerText = '🪙 ' + Math.floor(totalCoins);
+    document.getElementById('statBalanceTk').innerText = '≈ ৳' + coinsToTk(totalCoins).toFixed(2);
+    
+    document.getElementById('statPendingCoins').innerText = '🪙 ' + Math.floor(pendingCoins);
+    document.getElementById('statPendingTk').innerText = '≈ ৳' + coinsToTk(pendingCoins).toFixed(2);
+    
+    document.getElementById('statConfirmedCoins').innerText = '🪙 ' + Math.floor(confirmedCoins);
+    document.getElementById('statConfirmedTk').innerText = '≈ ৳' + coinsToTk(confirmedCoins).toFixed(2);
+    
+    document.getElementById('statRejectedCoins').innerText = '🪙 ' + Math.floor(rejectedCoins);
+    document.getElementById('statRejectedTk').innerText = '≈ ৳' + coinsToTk(rejectedCoins).toFixed(2);
 
     document.getElementById('statWithdrawals').innerText = pendingWithdrawalsCount;
     document.getElementById('statConfirmed').innerText = confirmedWithdrawalsCount;
     document.getElementById('statRejected').innerText = rejectedWithdrawalsCount;
     document.getElementById('statTotalRefer').innerText = totalRefer;
-    document.getElementById('statReferEarning').innerText = referEarning.toFixed(2);
+    
+    document.getElementById('statReferCoins').innerText = '🪙 ' + Math.floor(referCoins);
+    document.getElementById('statReferTk').innerText = '≈ ৳' + coinsToTk(referCoins).toFixed(2);
 
     loadActivityLogs();
 
@@ -652,7 +852,7 @@
     const tbody = document.querySelector('#activityLogTable tbody');
     
     if (logs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#6b7280;">এখনো কোনো অ্যাক্টিভিটি নেই</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#6b7280;">No activity yet</td></tr>';
       return;
     }
 
@@ -698,10 +898,10 @@
 
   function loadUsers() {
     const data = getData();
+    loadRatesFromConfig();
     const tbody = document.querySelector('#userTable tbody');
     const search = (document.getElementById('searchUser').value || '').toLowerCase();
     
-    // ✅ ইমেইল দিয়েও সার্চ করা যাবে
     const filtered = data.users.filter(u => 
       u.name.toLowerCase().includes(search) || 
       u.phone.toLowerCase().includes(search) ||
@@ -715,12 +915,17 @@
 
     tbody.innerHTML = filtered.map(u => {
       const avatarUrl = u.photo || `https://ui-avatars.com/api/?name=${u.name.charAt(0)}&background=667eea&color=fff`;
+      const coins = u.balance || 0;
+      const tk = coinsToTk(coins);
       return `
       <tr>
         <td><div class="user-info-cell"><img src="${avatarUrl}" alt="${u.name}"><span><b>${u.name}</b></span></div></td>
         <td>${u.phone}</td>
         <td>${u.email || 'N/A'}</td>
-        <td>৳${(u.balance || 0).toFixed(2)}</td>
+        <td>
+          <span class="coin-badge">🪙 ${Math.floor(coins)}</span><br>
+          <small style="color:#6b7280;">≈ ৳${tk.toFixed(2)}</small>
+        </td>
         <td>${u.totalRef || 0}</td>
         <td><span class="status ${u.isBlocked ? 'rejected' : 'confirm'}">${u.isBlocked ? 'Blocked' : 'Active'}</span></td>
         <td>
@@ -749,7 +954,7 @@
     document.getElementById('editUserId').value = ''; 
     document.getElementById('editName').value = '';
     document.getElementById('editPhone').value = ''; 
-    document.getElementById('editEmail').value = ''; // ✅
+    document.getElementById('editEmail').value = '';
     document.getElementById('editPassword').value = '';
     document.getElementById('editBalance').value = 0; 
     document.getElementById('userModal').classList.add('active');
@@ -760,9 +965,9 @@
     document.getElementById('editUserId').value = user.id; 
     document.getElementById('editName').value = user.name;
     document.getElementById('editPhone').value = user.phone; 
-    document.getElementById('editEmail').value = user.email || ''; // ✅
+    document.getElementById('editEmail').value = user.email || '';
     document.getElementById('editPassword').value = user.password || '';
-    document.getElementById('editBalance').value = user.balance || 0; 
+    document.getElementById('editBalance').value = Math.floor(user.balance || 0); 
     document.getElementById('userModal').classList.add('active');
   }
   function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
@@ -771,7 +976,7 @@
     const id = document.getElementById('editUserId').value;
     const name = document.getElementById('editName').value.trim();
     const phone = document.getElementById('editPhone').value.trim();
-    const email = document.getElementById('editEmail').value.trim(); // ✅
+    const email = document.getElementById('editEmail').value.trim();
     const password = document.getElementById('editPassword').value.trim();
     const balance = parseFloat(document.getElementById('editBalance').value) || 0;
     
@@ -782,7 +987,7 @@
       if(user) { 
         user.name = name; 
         user.phone = phone; 
-        user.email = email; // ✅
+        user.email = email;
         user.password = password; 
         user.balance = balance; 
       }
@@ -802,6 +1007,7 @@
 
   function loadWithdrawals() {
     const data = getData();
+    loadRatesFromConfig();
     const tbody = document.querySelector('#withdrawTable tbody');
     const filter = document.getElementById('filterWithdrawStatus').value;
     let allWithdraws = [];
@@ -809,68 +1015,110 @@
     if(filter !== 'all') allWithdraws = allWithdraws.filter(w => w.status === filter);
     allWithdraws.sort((a, b) => { if(a.status === 'pending' && b.status !== 'pending') return -1; if(a.status !== 'pending' && b.status === 'pending') return 1; return 0; });
 
-    if(allWithdraws.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#6b7280;">No withdrawal requests found</td></tr>'; return; }
+    if(allWithdraws.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#6b7280;">No withdrawal requests found</td></tr>'; return; }
     tbody.innerHTML = allWithdraws.map(w => {
       let actionBtn = '';
       if(w.status === 'pending') actionBtn = `<button class="btn-sm" style="background:#10b981;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'confirm')">✔️ Confirm</button><button class="btn-sm" style="background:#ef4444;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'rejected')">✖️ Reject</button>`;
       else if(w.status === 'confirm') actionBtn = `<span style="color:#10b981; font-weight:bold;">✔️ Confirmed</span>`;
       else actionBtn = `<span style="color:#ef4444; font-weight:bold;">✖️ Rejected</span>`;
       const avatarUrl = w.userPhoto || `https://ui-avatars.com/api/?name=${w.userName.charAt(0)}&background=667eea&color=fff`;
-      return `<tr><td><div class="user-info-cell"><img src="${avatarUrl}" alt="${w.userName}"><span><b>${w.userName}</b></span></div></td><td>${w.method}</td><td>${w.number}</td><td>৳${w.amount}</td><td>${formatDate(w.date)}</td><td><span class="status ${w.status}">${w.status}</span></td><td>${actionBtn}</td></tr>`;
+      
+      const coinsAmt = w.amount;
+      const tkAmt = w.tkAmount !== undefined ? w.tkAmount : coinsToTk(coinsAmt);
+      
+      return `<tr>
+        <td><div class="user-info-cell"><img src="${avatarUrl}" alt="${w.userName}"><span><b>${w.userName}</b></span></div></td>
+        <td>${w.method}</td>
+        <td>${w.number}</td>
+        <td><span class="coin-badge">🪙 ${Math.floor(coinsAmt)}</span></td>
+        <td><span class="tk-badge">৳ ${tkAmt.toFixed(2)}</span></td>
+        <td>${formatDate(w.date)}</td>
+        <td><span class="status ${w.status}">${w.status}</span></td>
+        <td>${actionBtn}</td>
+      </tr>`;
     }).join('');
   }
 
   function updateWithdrawStatus(userId, withdrawIdx, newStatus) {
     const data = getData(); const user = data.users.find(u => u.id === userId); if(!user || !user.withdrawHistory) return;
     const request = user.withdrawHistory[withdrawIdx]; if(!request) return;
-    if(newStatus === 'rejected' && request.status === 'pending') user.balance = (user.balance || 0) + request.amount;
+    
+    if(newStatus === 'rejected' && request.status === 'pending') {
+      user.balance = (user.balance || 0) + request.amount;
+    }
     request.status = newStatus;
     user.notifications = user.notifications || [];
     const now = new Date();
     const timeStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2,'0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-    if(newStatus === 'confirm') user.notifications.push({ id: Date.now(), msg: `✅ আপনার ৳${request.amount} উইথড্র রিকোয়েস্ট (${request.method}) অনুমোদিত হয়েছে!`, date: timeStr });
-    else user.notifications.push({ id: Date.now(), msg: `❌ আপনার ৳${request.amount} উইথড্র রিকোয়েস্ট (${request.method}) বাতিল হয়েছে। টাকা ফেরত দেওয়া হয়েছে।`, date: timeStr });
+    
+    const coinsAmt = request.amount;
+    const tkAmt = request.tkAmount !== undefined ? request.tkAmount : coinsToTk(coinsAmt);
+    
+    if(newStatus === 'confirm') {
+      user.notifications.push({ id: Date.now(), msg: `✅ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) অনুমোদিত হয়েছে!`, date: timeStr });
+    } else {
+      user.notifications.push({ id: Date.now(), msg: `❌ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) বাতিল হয়েছে। কয়েন ফেরত দেওয়া হয়েছে।`, date: timeStr });
+    }
+    
     setData(data); loadWithdrawals(); initDashboard();
-    showToast(`${newStatus === 'confirm' ? '✅ Approved' : '❌ Rejected'}: ৳${request.amount} for ${user.name}`, newStatus === 'confirm' ? '#10b981' : '#ef4444');
+    showToast(`${newStatus === 'confirm' ? '✅ Approved' : '❌ Rejected'}: 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) for ${user.name}`, newStatus === 'confirm' ? '#10b981' : '#ef4444');
   }
 
-  // ================= ✅ Withdraw Methods Management =================
   function loadMethods() {
     const data = getData();
+    loadRatesFromConfig();
     const container = document.getElementById('methodListContainer');
     const methods = data.config.withdrawMethods;
+    
+    const rateInfoEl = document.getElementById('withdrawRateInfo');
+    if(rateInfoEl) rateInfoEl.innerText = getRateText();
+    
     if(!methods || methods.length === 0) { container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No methods found. Please add one.</p>'; return; }
-    container.innerHTML = methods.map((m, i) => `
+    container.innerHTML = methods.map((m, i) => {
+      const minCoins = tkToCoins(m.minAmount);
+      return `
       <div class="method-item">
         <div style="display:flex; align-items:center; gap:10px;">
           ${m.logo ? `<img src="${m.logo}" alt="${m.name}">` : `<span style="font-size:20px;">🏦</span>`}
-          <div><b>${m.name}</b><br><small style="color:#6b7280;">Min: ৳${m.minAmount} | Input: ${m.inputType === 'number' ? 'Phone Number' : 'Text/Address'}</small></div>
+          <div>
+            <b>${m.name}</b><br>
+            <small style="color:#6b7280;">Min: ৳${m.minAmount} (🪙${minCoins} coins) | Input: ${m.inputType === 'number' ? 'Phone Number' : 'Text/Address'}</small>
+          </div>
         </div>
         <div>
           <button class="btn-sm" style="background:#3b82f6;" onclick="openEditMethodModal(${i})">✏️ Edit</button>
           <button class="btn-sm" style="background:#ef4444;" onclick="deleteMethod(${i})">🗑️ Delete</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function openMethodModal() {
+    loadRatesFromConfig();
     document.getElementById('methodModalTitle').innerText = '➕ Add New Withdraw Method';
     document.getElementById('editMethodIdx').value = ''; document.getElementById('mName').value = '';
-    document.getElementById('mLogo').value = ''; document.getElementById('mMinAmount').value = '50';
-    document.getElementById('mInputType').value = 'number'; document.getElementById('methodModal').classList.add('active');
+    document.getElementById('mLogo').value = ''; document.getElementById('mMinAmount').value = '1';
+    document.getElementById('mInputType').value = 'number'; 
+    const rateInfo = document.getElementById('methodRateInfo');
+    if(rateInfo) rateInfo.innerText = `💡 নোট: ${getRateText()} | আপনার দেওয়া টাকার মান × ${COINS_PER_TK} = ইউজারের কয়েন লিমিট`;
+    document.getElementById('methodModal').classList.add('active');
   }
   function openEditMethodModal(idx) {
+    loadRatesFromConfig();
     const data = getData(); const method = data.config.withdrawMethods[idx]; if(!method) return;
     document.getElementById('methodModalTitle').innerText = '✏️ Edit Withdraw Method';
     document.getElementById('editMethodIdx').value = idx; document.getElementById('mName').value = method.name;
     document.getElementById('mLogo').value = method.logo || ''; document.getElementById('mMinAmount').value = method.minAmount;
-    document.getElementById('mInputType').value = method.inputType; document.getElementById('methodModal').classList.add('active');
+    document.getElementById('mInputType').value = method.inputType;
+    const rateInfo = document.getElementById('methodRateInfo');
+    if(rateInfo) rateInfo.innerText = `💡 নোট: ${getRateText()} | আপনার দেওয়া টাকার মান × ${COINS_PER_TK} = ইউজারের কয়েন লিমিট`;
+    document.getElementById('methodModal').classList.add('active');
   }
   function closeMethodModal() { document.getElementById('methodModal').classList.remove('active'); }
   function saveMethod() {
     const data = getData(); const idx = document.getElementById('editMethodIdx').value;
     const name = document.getElementById('mName').value.trim(); const logo = document.getElementById('mLogo').value.trim();
-    const minAmount = parseFloat(document.getElementById('mMinAmount').value) || 50; const inputType = document.getElementById('mInputType').value;
+    const minAmount = parseFloat(document.getElementById('mMinAmount').value) || 1; const inputType = document.getElementById('mInputType').value;
     if(!name) return showToast('Method Name is required!', '#ef4444');
     const methodObj = { id: Date.now().toString(), name, logo, minAmount, inputType };
     if(idx !== '') { data.config.withdrawMethods[idx] = methodObj; showToast('✅ Method updated!', '#10b981'); }
@@ -883,9 +1131,9 @@
     setData(data); loadMethods(); showToast('🗑️ Method deleted!', '#ef4444');
   }
 
-  // ================= Config Settings =================
   function loadConfig() {
     const c = getData().config;
+    loadRatesFromConfig();
     document.getElementById('cfgDailyClaim').value = c.dailyClaim;
     document.getElementById('cfgRefBonus').value = c.refBonus;
     document.getElementById('cfgMinWithdraw').value = c.minWithdraw;
@@ -903,6 +1151,9 @@
     document.getElementById('cfgLimitVideo').value = c.limitVideo;
     document.getElementById('cfgAdUrl').value = c.adUrl;
     document.getElementById('cfgAdDuration').value = c.adDuration;
+    
+    const rateInfo = document.getElementById('taskRateInfo');
+    if(rateInfo) rateInfo.innerText = `${getRateText()} | নিচের সব রিওয়ার্ড কয়েনে দেওয়া হবে`;
   }
   function saveConfig() {
     const data = getData();
@@ -921,7 +1172,57 @@
     setData(data); showToast('✅ All Configurations Saved!', '#10b981');
   }
 
-  // ================= Banner Management =================
+  // ================= ✅ NEW: Coin Rate Management =================
+  function loadCoinRate() {
+    const data = getData();
+    const coinSystem = data.config.coinSystem || { coinsPerTk: 100, tkPerCoinsBlock: 1 };
+    document.getElementById('cfgCoinsPerTk').value = coinSystem.coinsPerTk;
+    document.getElementById('cfgTkPerBlock').value = coinSystem.tkPerCoinsBlock;
+    updateRatePreview();
+  }
+
+  function updateRatePreview() {
+    const coins = parseFloat(document.getElementById('cfgCoinsPerTk').value) || 100;
+    const tk = parseFloat(document.getElementById('cfgTkPerBlock').value) || 1;
+    
+    document.getElementById('ratePreviewText').innerText = `${coins} Coins = ৳${tk}`;
+    
+    const examplesBox = document.getElementById('rateExamples');
+    if(examplesBox) {
+      const examples = [
+        { coins: 100, label: '100 Coins' },
+        { coins: 500, label: '500 Coins' },
+        { coins: 1000, label: '1000 Coins' },
+        { coins: 5000, label: '5000 Coins' },
+        { coins: 10000, label: '10000 Coins' }
+      ];
+      
+      examplesBox.innerHTML = examples.map(ex => {
+        const tkValue = (ex.coins / coins) * tk;
+        return `<p>🪙 <b>${ex.label}</b> = <b style="color: #10b981;">৳${tkValue.toFixed(2)}</b></p>`;
+      }).join('');
+    }
+  }
+
+  function saveCoinRate() {
+    const data = getData();
+    const coinsPerTk = parseFloat(document.getElementById('cfgCoinsPerTk').value);
+    const tkPerBlock = parseFloat(document.getElementById('cfgTkPerBlock').value);
+    
+    if(!coinsPerTk || coinsPerTk <= 0) return showToast('❌ Coins must be greater than 0', '#ef4444');
+    if(!tkPerBlock || tkPerBlock <= 0) return showToast('❌ Tk must be greater than 0', '#ef4444');
+    
+    if(!data.config) data.config = {};
+    data.config.coinSystem = {
+      coinsPerTk: coinsPerTk,
+      tkPerCoinsBlock: tkPerBlock
+    };
+    
+    setData(data);
+    loadRatesFromConfig();
+    showToast(`✅ Coin rate updated: ${coinsPerTk} Coins = ৳${tkPerBlock}`, '#10b981');
+  }
+
   function loadBanners() {
     const data = getData(); const container = document.getElementById('bannerListContainer');
     if(!data.banners || data.banners.length === 0) { container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No banners found. Please add one.</p>'; return; }
@@ -969,24 +1270,27 @@
     const data = getData(); data.banners.splice(idx, 1); setData(data); loadBanners(); showToast('🗑️ Banner deleted!', '#ef4444');
   }
 
-  // ================= Fraud Settings =================
   function loadFraudSettings() {
     const f = getData().config.fraud;
-    document.getElementById('fraudForceAd').checked = f.forceAd;
-    document.getElementById('fraudVpn').checked = f.vpnBlock;
-    document.getElementById('fraudMultiAccount').checked = f.multiAccountBlock;
-    document.getElementById('fraudMaxIp').value = f.maxAccountsPerIp;
-    document.getElementById('fraudMaxWithdraw').value = f.maxWithdraw;
-    document.getElementById('fraudSpamTimer').value = f.spamTimer;
+    document.getElementById('fraudForceAd').checked = f.forceAd || false;
+    document.getElementById('fraudVpn').checked = f.vpnBlock || false;
+    document.getElementById('fraudMultiAccount').checked = f.multiAccountBlock || false;
+    document.getElementById('fraudMaxIp').value = f.maxAccountsPerIp || 1;
+    document.getElementById('fraudMaxWithdraw').value = f.maxWithdraw || 1000;
+    document.getElementById('fraudSpamTimer').value = f.spamTimer || 5;
   }
   function saveFraudSettings() {
     const data = getData();
     data.config.fraud = {
-      forceAd: document.getElementById('fraudForceAd').checked, vpnBlock: document.getElementById('fraudVpn').checked,
-      multiAccountBlock: document.getElementById('fraudMultiAccount').checked, maxAccountsPerIp: +document.getElementById('fraudMaxIp').value || 1,
-      maxWithdraw: +document.getElementById('fraudMaxWithdraw').value || 1000, spamTimer: +document.getElementById('fraudSpamTimer').value || 5
+      forceAd: document.getElementById('fraudForceAd').checked, 
+      vpnBlock: document.getElementById('fraudVpn').checked,
+      multiAccountBlock: document.getElementById('fraudMultiAccount').checked, 
+      maxAccountsPerIp: +document.getElementById('fraudMaxIp').value || 1,
+      maxWithdraw: +document.getElementById('fraudMaxWithdraw').value || 1000, 
+      spamTimer: +document.getElementById('fraudSpamTimer').value || 0
     };
-    setData(data); showToast('🛡️ Fraud Settings Saved!', '#ef4444');
+    setData(data); 
+    showToast('🛡️ Fraud Settings Saved & Now Live on User App!', '#ef4444');
   }
 
   function loadNotifUsers() {
@@ -1003,6 +1307,40 @@
     user.notifications = user.notifications || [];
     user.notifications.push({ id: Date.now(), msg: msg, date: dateTimeStr });
     setData(data); document.getElementById('notifMsg').value = ''; showToast(`📢 Notification sent to ${user.name}!`, '#10b981');
+  }
+
+  function sendNotificationToAll() {
+    const data = getData();
+    const msg = document.getElementById('notifAllMsg').value.trim();
+    
+    if(!msg) return showToast('Please type a message', '#ef4444');
+    if(data.users.length === 0) return showToast('No users found!', '#ef4444');
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const dateTimeStr = `${day}/${month}/${year}, ${hours}:${minutes} ${ampm}`;
+
+    let count = 0;
+    data.users.forEach(user => {
+      user.notifications = user.notifications || [];
+      user.notifications.push({ 
+        id: Date.now() + Math.random(), 
+        msg: msg, 
+        date: dateTimeStr 
+      });
+      count++;
+    });
+
+    setData(data);
+    document.getElementById('notifAllMsg').value = '';
+    showToast(`📢 Notification sent to all ${count} users!`, '#10b981');
   }
 
   function changeAdminPassword() {
