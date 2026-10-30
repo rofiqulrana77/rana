@@ -508,15 +508,17 @@
 
     let referrer = null;
     if(referCode) {
-      referrer = data.users.find(u => u.phone === referCode || u.email === referCode);
+      referrer = data.users.find(u => u.myReferCode === referCode || u.phone === referCode || u.email === referCode);
       if(!referrer) return showToast('❌ রেফারেল কোডটি সঠিক নয়!');
       if(referrer.phone === phone) return showToast('❌ নিজের কোড ব্যবহার করা যাবে না!');
     }
     
     const clientIp = getClientIpIdentifier();
+    const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
 
     const newUser = { 
       id: Date.now(), name, phone, email, password, balance: 0, 
+      myReferCode: uniqueReferCode,
       isBlocked: false, totalRef: 0, refIncome: 0, 
       ipToken: clientIp,
       withdrawHistory: [], notifications: [], 
@@ -750,8 +752,19 @@
 
   function generateReferLink(user) {
     if(!user) return;
+    
+    if(!user.myReferCode) {
+      user.myReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
+      const data = getMasterData();
+      const targetUser = data.users.find(u => u.id === user.id);
+      if(targetUser) {
+        targetUser.myReferCode = user.myReferCode;
+        saveMasterData(data);
+      }
+    }
+
     const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-    const refLink = `${baseUrl}?ref=${encodeURIComponent(user.phone)}`;
+    const refLink = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
     const input = document.getElementById('referLink');
     if(input) input.value = refLink;
   }
