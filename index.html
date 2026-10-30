@@ -9,9 +9,9 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getDatabase, ref, set, get, update, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // TODO: আপনার ফায়ারবেস প্রজেক্টের কনফিগারেশন এখানে বসিয়ে দিন
+  // TODO: আপনার অ্যাডমিন প্যানেলের মতো একই ফায়ারবেস কনফিগারেশন এখানে বসিয়ে দিন
   const firebaseConfig = {
-apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
+  apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   authDomain: "rofiqul.firebaseapp.com",
   databaseURL: "https://rofiqul-default-rtdb.firebaseio.com",
   projectId: "rofiqul",
@@ -21,11 +21,9 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   measurementId: "G-7N3YD934QH"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // গ্লোবালি ফায়ারবেস ফাংশনগুলো ব্যবহারের জন্য উইন্ডোতে এসাইন করা হলো
   window.fbDB = db;
   window.fbRef = ref;
   window.fbSet = set;
@@ -75,43 +73,100 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   
   .header-right { display: flex; gap: 10px; }
   .icon-btn { position: relative; cursor: pointer; font-size: 22px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-  .icon-btn:active { transform: scale(0.9); }
   .notif-badge { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; background: #ff4757; border-radius: 50%; border: 2px solid #764ba2; display: none; }
   
   .balance-card { background: var(--card-bg); margin: -20px 15px 15px; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; position: relative; z-index: 10; }
   .balance-card .coin-display { color: #f59e0b; font-size: 34px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .balance-card .coin-display .coin-icon { font-size: 30px; }
   .balance-card .tk-display { color: #667eea; font-size: 16px; font-weight: 600; margin-top: 5px; }
   .balance-card p { color: var(--text-sub); font-size: 12px; margin-top: 5px; }
   
+  .banner-slider { margin: 15px 15px 20px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; height: 140px; }
+  .banner-track { display: flex; height: 100%; transition: transform 0.4s ease-in-out; width: 100%; }
+  .banner-slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; color: white; position: relative; }
+  .banner-slide-content h3 { font-size: 16px; margin-bottom: 5px; font-weight: 700; }
+  .banner-slide-content p { font-size: 12px; opacity: 0.9; margin-bottom: 10px; }
+  .banner-slide-content button { background: rgba(255,255,255,0.25); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
+  .banner-slide-icon { font-size: 50px; opacity: 0.9; }
+  .banner-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; }
+  .banner-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: 0.3s; }
+  .banner-dot.active { background: white; width: 20px; border-radius: 4px; }
+  
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 15px; }
-  .card { background: var(--card-bg); padding: 18px 10px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.07); transition: transform 0.2s; }
-  .card:active { transform: scale(0.95); }
+  .card { background: var(--card-bg); padding: 18px 10px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
   .card .icon { font-size: 30px; margin-bottom: 8px; }
   .card .title { font-size: 13px; font-weight: 600; color: var(--text-main); }
   .card .sub { font-size: 10px; color: var(--text-sub); margin-top: 3px; }
   
   .modal { display: none; position: fixed; inset: 0; background: var(--modal-overlay); z-index: 1000; padding: 20px; overflow-y: auto; }
   .modal.active { display: block; }
-  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 20px; max-width: 450px; margin: 30px auto; position: relative; animation: slideUp 0.3s; }
-  @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 20px; max-width: 450px; margin: 30px auto; position: relative; }
   .close-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: #ff4757; color: white; border: none; font-size: 18px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; }
   .modal h3 { margin-bottom: 15px; color: var(--text-main); }
   
   .btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
   .btn-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
   
+  .wheel-container { position: relative; width: 250px; height: 250px; margin: 20px auto; }
+  .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #667eea; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); background: conic-gradient(#ff6b6b 0deg 45deg, #4ecdc4 45deg 90deg, #ffe66d 90deg 135deg, #a8e6cf 135deg 180deg, #ff6b6b 180deg 225deg, #4ecdc4 225deg 270deg, #ffe66d 270deg 315deg, #a8e6cf 315deg 360deg); }
+  .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 30px; color: #ff4757; z-index: 10; }
+  .spin-result { text-align: center; font-size: 16px; font-weight: bold; color: #667eea; margin-top: 10px; min-height: 24px; }
+  
+  .scratch-box { width: 250px; height: 150px; margin: 15px auto; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+  .scratch-box.revealed { background: #38ef7d; }
+  
+  .quiz-q { font-size: 20px; font-weight: bold; text-align: center; margin: 15px 0; color: var(--text-main); }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quiz-opt { padding: 12px; background: #f0f2f5; color: #333; border-radius: 10px; text-align: center; cursor: pointer; font-weight: 600; border: 2px solid transparent; }
+  
+  .captcha-box { background: #f0f2f5; color: #333; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 5px; border-radius: 10px; margin: 15px 0; text-decoration: line-through; }
+  
   input[type="text"], input[type="tel"], input[type="email"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 2px solid #e0e0e0; border-radius: 10px; margin: 8px 0; font-size: 14px; }
+  
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; color: #333; }
+  .list-item button { background: #667eea; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .list-item button:disabled { background: #ccc; cursor: not-allowed; }
   
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -3px 15px rgba(0,0,0,0.1); z-index: 100; }
   .nav-item { text-align: center; color: var(--text-sub); font-size: 10px; cursor: pointer; flex: 1; }
   .nav-item .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
   .nav-item.active { color: #667eea; }
   
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; }
+  .withdraw-option { padding: 15px; background: #f8f9fa; color: #333; border-radius: 10px; margin: 8px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e0e0e0; }
+  .withdraw-option.selected { background: #667eea; color: white; border-color: #667eea; }
+  .w-logo { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; background: white; padding: 2px; }
+  
+  .history-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: var(--text-main); }
+  .status { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; }
+  .status.pending { background: #ffeaa7; color: #d63031; }
+  .status.confirm { background: #55efc4; color: #00b894; }
+  .status.rejected { background: #ff7675; color: white; }
+  
+  .lb-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; color: #333; }
+  .lb-item.me { background: #e3f2fd; border: 2px solid #667eea; }
+  .lb-rank { font-size: 20px; font-weight: bold; width: 30px; text-align: center; }
+  .lb-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .lb-info { flex: 1; }
+  .lb-info h4 { font-size: 14px; }
+  .lb-amount { font-weight: bold; color: #f59e0b; font-size: 14px; }
+  
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   
+  #webViewModal { background: var(--card-bg); z-index: 2000; padding: 0; display: none; flex-direction: column; position: fixed; inset: 0; width: 100%; height: 100vh; }
+  #webViewModal.active { display: flex; }
+  .webview-header { background: var(--card-bg); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; font-weight: bold; color: var(--text-main); }
+  .webview-timer { color: #ff4757; background: #ffeaa7; padding: 6px 15px; border-radius: 20px; font-weight: bold; }
+  .webview-close { width: 30px; height: 30px; background: #ff4757; color: white; border: none; border-radius: 50%; cursor: pointer; font-weight: bold; }
+  .webview-iframe { flex: 1; width: 100%; border: none; }
+  
+  .ad-video-container { width: 100%; background: #000; border-radius: 10px; overflow: hidden; position: relative; margin: 15px 0; border: 2px solid #333; }
+  .ad-video-container iframe { width: 100%; height: 200px; border: none; display: block; }
+  .ad-timer-badge { position: absolute; top: 10px; right: 10px; background: rgba(255, 71, 87, 0.9); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 10; }
+  
+  .ref-banner { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
   .logout-btn { background: linear-gradient(135deg, #ff4757, #ff6b81); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; }
+  .notif-item { background: #f8f9fa; color: #333; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; font-size: 13px; }
+  .notif-item .time { font-size: 11px; color: #666; margin-top: 6px; display: block; }
 </style>
 </head>
 <body>
@@ -119,7 +174,7 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
 <div id="authScreen">
   <div class="auth-card" id="loginForm">
     <h2>Welcome Back!</h2>
-    <p>Login to your account via Firebase</p>
+    <p>Login to your account to continue</p>
     <input type="text" id="loginInput" placeholder="Phone Number or Gmail" required>
     <input type="password" id="loginPassword" placeholder="Password" required>
     <button onclick="handleLogin()">Login Now</button>
@@ -128,7 +183,8 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
 
   <div class="auth-card" id="registerForm" style="display:none;">
     <h2>Create Account</h2>
-    <p>Cloud Database Registration</p>
+    <p>Join us and start earning today</p>
+    <div id="refBanner" class="ref-banner" style="display:none;">🎁 আপনি রেফারেল লিংক থেকে এসেছেন!</div>
     <input type="text" id="regName" placeholder="Full Name" required>
     <input type="tel" id="regPhone" placeholder="Phone Number" required>
     <input type="email" id="regEmail" placeholder="Gmail Address" required>
@@ -145,31 +201,138 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
       <img src="https://ui-avatars.com/api/?name=User&background=fff&color=667eea" class="avatar" id="headerAvatar" alt="Profile">
       <div class="user-info"><h3 id="headerName">User</h3><p id="headerPhone">+880 1XXXXXXXXX</p></div>
     </div>
+    <div class="header-right"><div class="icon-btn" onclick="openNotifModal()">🔔<div class="notif-badge" id="notifBadge"></div></div></div>
   </div>
 
   <div class="balance-card">
     <div class="coin-display"><span class="coin-icon">🪙</span><span id="coinDisplay">0</span></div>
     <div class="tk-display">≈ ৳<span id="tkDisplay">0.00</span></div>
-    <p>Firebase Balance</p>
+    <p>Your Available Balance</p>
+  </div>
+
+  <div class="banner-slider" id="bannerSlider">
+    <div class="banner-track" id="bannerTrack"></div>
+    <div class="banner-dots" id="bannerDots"></div>
   </div>
 
   <div class="grid" id="mainGrid">
-    <div class="card" onclick="openModal('referModal')"><div class="icon">🔗</div><div class="title">Refer & Earn</div><div class="sub" id="referStatus">0 refer</div></div>
-    <div class="card" onclick="openModal('profileModal')"><div class="icon">👤</div><div class="title">Profile</div><div class="sub">Settings</div></div>
+    <div class="card" onclick="openModal('dailyClaimModal')"><div class="icon">🎁</div><div class="title">Daily Claim</div><div class="sub" id="dailyClaimStatus">Available</div></div>
+    <div class="card" onclick="openModal('wheelModal')"><div class="icon">🎡</div><div class="title">Lucky Spin</div><div class="sub" id="wheelStatus">10 left today</div></div>
+    <div class="card" onclick="openModal('scratchModal')"><div class="icon">🎫</div><div class="title">Scratch Card</div><div class="sub" id="scratchStatus">10 left today</div></div>
+    <div class="card" onclick="openModal('quizModal')"><div class="icon">🧮</div><div class="title">Math Quiz</div><div class="sub" id="quizStatus">10 left today</div></div>
+    <div class="card" onclick="openModal('captchaModal')"><div class="icon">🔐</div><div class="title">Captcha Solver</div><div class="sub" id="captchaStatus">10 left today</div></div>
+    <div class="card" onclick="openModal('visitModal')"><div class="icon">🌐</div><div class="title">Visit Website</div><div class="sub" id="visitStatus">10 links · 1 min</div></div>
+    <div class="card" onclick="openModal('videoModal')"><div class="icon">📺</div><div class="title">Watch Video</div><div class="sub" id="videoStatus">10 links · 1 min</div></div>
+    <div class="card" onclick="openModal('withdrawModal')"><div class="icon">💸</div><div class="title">Withdraw</div><div class="sub">Min Coins</div></div>
+    <div class="card" onclick="openModal('leaderboardModal')"><div class="icon">🏆</div><div class="title">Leaderboard</div><div class="sub">Top earners</div></div>
+    <div class="card" onclick="openModal('referModal')"><div class="icon">🔗</div><div class="title">Refer</div><div class="sub" id="referStatus">0 refer</div></div>
   </div>
 
   <div class="bottom-nav">
     <div class="nav-item active" onclick="showHome()"><span class="nav-icon">🏠</span>Home</div>
+    <div class="nav-item" onclick="openModal('withdrawModal')"><span class="nav-icon">💰</span>Withdraw</div>
+    <div class="nav-item" onclick="openModal('leaderboardModal')"><span class="nav-icon">🏆</span>Rank</div>
     <div class="nav-item" onclick="openModal('profileModal')"><span class="nav-icon">👤</span>Profile</div>
+  </div>
+
+  <div class="modal" id="notifModal"><div class="modal-content"><button class="close-btn" onclick="closeModal('notifModal')">×</button><h3>🔔 Notifications</h3><div id="notifList"></div></div></div>
+
+  <div id="webViewModal" class="modal">
+    <div class="webview-header"><div class="title" id="webViewTitle">🌐 Visit Website</div><div class="webview-timer" id="webViewTimer">60s</div><button class="webview-close" onclick="closeWebView()">×</button></div>
+    <iframe id="webViewIframe" class="webview-iframe" src="about:blank"></iframe>
+  </div>
+
+  <div class="modal" id="dailyClaimModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('dailyClaimModal')">×</button>
+      <h3>🎁 Daily Claim</h3>
+      <div id="claimAdSection" style="display:none; margin-top: 15px;">
+        <div class="ad-video-container"><div class="ad-timer-badge" id="claimAdTimer">15s</div><iframe id="claimAdIframe" src=""></iframe></div>
+      </div>
+      <p style="text-align:center;color:#666;margin:15px 0;">Claim Daily Reward</p>
+      <button class="btn btn-green" id="claimBtn" onclick="claimDaily()">Claim Now</button>
+    </div>
+  </div>
+
+  <div class="modal" id="wheelModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('wheelModal')">×</button>
+      <h3>🎡 Lucky Spin</h3>
+      <div id="spinAdSection" style="display:none; margin-top: 15px;">
+        <div class="ad-video-container"><div class="ad-timer-badge" id="spinAdTimer">15s</div><iframe id="spinAdIframe" src=""></iframe></div>
+      </div>
+      <div class="wheel-container"><div class="wheel-pointer">▼</div><div class="wheel" id="wheel"></div></div>
+      <div class="spin-result" id="spinResult"></div>
+      <button class="btn" id="spinBtn" onclick="requestSpin()">Spin Now</button>
+    </div>
+  </div>
+
+  <div class="modal" id="scratchModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('scratchModal')">×</button>
+      <h3>🎫 Scratch Card</h3>
+      <div id="scratchAdSection" style="display:none; margin-top: 15px;">
+        <div class="ad-video-container"><div class="ad-timer-badge" id="scratchAdTimer">15s</div><iframe id="scratchAdIframe" src=""></iframe></div>
+      </div>
+      <div class="scratch-box" id="scratchBox" onclick="requestScratch()">Tap to Scratch</div>
+    </div>
+  </div>
+
+  <div class="modal" id="quizModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('quizModal')">×</button>
+      <h3>🧮 Math Quiz</h3>
+      <div id="quizContent">
+        <div class="quiz-q" id="quizQuestion">Loading...</div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <button class="btn btn-green" id="quizVerifyBtn" style="display:none; margin-top: 15px;" onclick="verifyQuizAnswer()">Verify Answer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="captchaModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('captchaModal')">×</button>
+      <h3>🔐 Captcha Solver</h3>
+      <div id="captchaContent"><div class="captcha-box" id="captchaBox">ABCD</div><input type="text" id="captchaInput" placeholder="Type the captcha"><button class="btn" onclick="verifyCaptcha()">Verify</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="visitModal">
+    <div class="modal-content"><button class="close-btn" onclick="closeModal('visitModal')">×</button><h3>🌐 Visit Website</h3><div id="visitList"></div></div>
+  </div>
+
+  <div class="modal" id="videoModal">
+    <div class="modal-content"><button class="close-btn" onclick="closeModal('videoModal')">×</button><h3>📺 Watch Video</h3><div id="videoList"></div></div>
+  </div>
+
+  <div class="modal" id="withdrawModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('withdrawModal')">×</button>
+      <h3>💸 Withdraw</h3>
+      <div id="withdrawOptions"></div>
+      <input type="text" id="withdrawNumber" placeholder="Enter number/wallet address">
+      <input type="number" id="withdrawAmount" placeholder="Enter coins amount">
+      <button class="btn btn-green" onclick="submitWithdraw()">Request Withdraw</button>
+      <h4 style="margin:20px 0 10px;">📜 Withdraw History</h4>
+      <div id="withdrawHistory"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="leaderboardModal">
+    <div class="modal-content"><button class="close-btn" onclick="closeModal('leaderboardModal')">×</button><h3>🏆 Leaderboard</h3><div id="leaderboardList"></div></div>
   </div>
 
   <div class="modal" id="referModal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('referModal')">×</button>
       <h3>🔗 Refer & Earn</h3>
-      <p style="margin:10px 0;">Your Referral Link:</p>
       <input type="text" id="referLink" readonly>
       <button class="btn" onclick="copyRefer()">Copy Link</button>
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <div style="flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;"><p style="font-size: 11px;">Total Ref</p><h4 id="totalRefer">0</h4></div>
+        <div style="flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;"><p style="font-size: 11px;">Earnings</p><h4 id="referIncome">0</h4></div>
+      </div>
     </div>
   </div>
 
@@ -177,6 +340,10 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('profileModal')">×</button>
       <h3>👤 Profile</h3>
+      <input type="text" id="profileName" placeholder="Name">
+      <input type="email" id="profileEmail" placeholder="Email">
+      <input type="tel" id="profilePhone" placeholder="Phone">
+      <button class="btn btn-green" onclick="saveProfile()">Save Profile</button>
       <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -185,31 +352,33 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
 <div id="toast" class="toast">Toast Message</div>
 
 <script>
-  function switchAuth(type) {
-    if(type === 'register') { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
-    else { document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; }
-  }
+  let currentUserKey = null;
+  let cachedConfig = { dailyClaim: 5, refBonus: 50, coinSystem: { coinsPerTk: 100 }, limitSpin: 10, limitScratch: 10, limitQuiz: 10, limitCaptcha: 10, limitVisit: 10, limitVideo: 10, adUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' };
 
   function showToast(msg) {
     const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  function openModal(id) { document.getElementById(id).classList.add('active'); }
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-  function showHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function switchAuth(type) {
+    if(type === 'register') { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
+    else { document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; }
+  }
 
-  // ফায়ারবেস থেকে সকল ইউজার ডাটা ফেচ করার ফাংশন
   async function fetchAllUsers() {
-    if(!window.fbDB) return [];
+    if(!window.fbDB) return {};
     try {
-      const snapshot = await window.fbGet(window.fbRef(window.fbDB, 'users'));
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        return Object.values(data);
-      }
-    } catch(e) { console.error(e); }
-    return [];
+      const snap = await window.fbGet(window.fbRef(window.fbDB, 'users'));
+      return snap.exists() ? snap.val() : {};
+    } catch(e) { return {}; }
+  }
+
+  async function fetchConfig() {
+    if(!window.fbDB) return;
+    try {
+      const snap = await window.fbGet(window.fbRef(window.fbDB, 'config'));
+      if(snap.exists()) cachedConfig = { ...cachedConfig, ...snap.val() };
+    } catch(e) {}
   }
 
   async function handleRegister() {
@@ -221,14 +390,21 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     
     if(!name || !phone || !email || !password) return showToast('❌ সব ঘর পূরণ করুন!');
     
-    const users = await fetchAllUsers();
+    await fetchConfig();
+    const usersObj = await fetchAllUsers();
+    const usersList = Object.entries(usersObj).map(([k, v]) => ({ fbKey: k, ...v }));
 
-    if(users.find(u => u.phone === phone)) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
-    if(users.find(u => u.email === email)) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+    if(usersList.find(u => u.phone === phone)) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+    if(usersList.find(u => u.email === email)) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
 
-    let referrer = null;
+    let referrerKey = null;
+    let referrerObj = null;
     if(referCode) {
-      referrer = users.find(u => u.myReferCode === referCode || u.phone === referCode);
+      const found = usersList.find(u => u.myReferCode === referCode || u.phone === referCode);
+      if(found) {
+        referrerKey = found.fbKey;
+        referrerObj = found;
+      }
     }
     
     const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
@@ -236,31 +412,31 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
 
     const newUser = { 
       id: userId, name, phone, email, password, balance: 0, 
-      myReferCode: uniqueReferCode,
-      isBlocked: false, totalRef: 0, refIncome: 0, 
-      joinDate: new Date().toLocaleDateString() 
+      myReferCode: uniqueReferCode, isBlocked: false, totalRef: 0, refIncome: 0, 
+      spinUsed: 0, scratchUsed: 0, quizUsed: 0, captchaUsed: 0, 
+      visitUsed: [], videoUsed: [], lastClaimDate: '', 
+      withdrawHistory: [], notifications: [], joinDate: new Date().toLocaleDateString() 
     };
 
-    // ফায়ারবেসে নতুন ইউজার সেভ করা
     try {
       await window.fbSet(window.fbRef(window.fbDB, 'users/' + userId), newUser);
 
-      // যদি ভ্যালিড রেফারার থাকে, তার ব্যালেন্স ও রেফার কাউন্ট আপডেট করা
-      if(referrer) {
-        const refBonusCoins = 50;
-        referrer.balance = (referrer.balance || 0) + refBonusCoins;
-        referrer.totalRef = (referrer.totalRef || 0) + 1;
-        referrer.refIncome = (referrer.refIncome || 0) + refBonusCoins;
+      if(referrerKey && referrerObj) {
+        const refBonus = cachedConfig.refBonus || 50;
+        referrerObj.balance = (referrerObj.balance || 0) + refBonus;
+        referrerObj.totalRef = (referrerObj.totalRef || 0) + 1;
+        referrerObj.refIncome = (referrerObj.refIncome || 0) + refBonus;
+        referrerObj.notifications = referrerObj.notifications || [];
+        referrerObj.notifications.push({ msg: `🎉 আপনি ${name}-কে রেফার করে ${refBonus} কয়েন পেয়েছেন!`, date: new Date().toLocaleString() });
 
-        await window.fbSet(window.fbRef(window.fbDB, 'users/' + referrer.id), referrer);
+        await window.fbSet(window.fbRef(window.fbDB, 'users/' + referrerKey), referrerObj);
       }
 
       localStorage.setItem('firebase_current_user', userId);
-      showToast('✅ ফায়ারবেসে রেজিস্ট্রেশন সফল হয়েছে!');
+      showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
+      if(window.location.search.includes('ref=')) window.history.replaceState({}, document.title, window.location.pathname);
       checkLoginStatus();
-    } catch (error) {
-      showToast('❌ রেজিস্ট্রেশন ব্যর্থ হয়েছে: ' + error.message);
-    }
+    } catch(e) { showToast('❌ রেজিস্ট্রেশন ব্যর্থ হয়েছে!'); }
   }
 
   async function handleLogin() {
@@ -269,40 +445,78 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     
     if(!loginInput || !password) return showToast('ফোন নম্বর/জিমেইল এবং পাসওয়ার্ড দিন!');
     
-    const users = await fetchAllUsers();
-    const user = users.find(u => u.phone === loginInput || u.email === loginInput);
+    const usersObj = await fetchAllUsers();
+    const userEntry = Object.entries(usersObj).find(([k, u]) => u.phone === loginInput || u.email === loginInput);
     
-    if(!user) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
+    if(!userEntry) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
+    const [fbKey, user] = userEntry;
+    
     if(user.password !== password) return showToast('❌ পাসওয়ার্ড সঠিক নয়!');
     if(user.isBlocked) return showToast('🚫 আপনার অ্যাকাউন্ট ব্লক করা হয়েছে!');
     
-    localStorage.setItem('firebase_current_user', user.id);
+    localStorage.setItem('firebase_current_user', fbKey);
     showToast('✅ লগইন সফল হয়েছে!');
     checkLoginStatus();
   }
 
   async function checkLoginStatus() {
-    const userId = localStorage.getItem('firebase_current_user');
-    if(userId) {
-      const users = await fetchAllUsers();
-      const user = users.find(u => u.id === userId);
+    const fbKey = localStorage.getItem('firebase_current_user');
+    if(fbKey) {
+      await fetchConfig();
+      const usersObj = await fetchAllUsers();
+      const user = usersObj[fbKey];
       if(user) {
+        if(user.isBlocked) { logout(); return; }
+        currentUserKey = fbKey;
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        
-        document.getElementById('coinDisplay').innerText = Math.floor(user.balance || 0);
-        document.getElementById('tkDisplay').innerText = ((user.balance || 0) / 100).toFixed(2);
-        document.getElementById('headerName').innerText = user.name;
-        document.getElementById('headerPhone').innerText = user.phone;
-        document.getElementById('referStatus').innerText = (user.totalRef || 0) + ' refer';
-        
-        const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-        document.getElementById('referLink').value = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
+        updateUI(user);
+        initBannerSlider();
         return;
       }
     }
     document.getElementById('authScreen').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
+  }
+
+  function updateUI(user) {
+    const coins = user.balance || 0;
+    const cpTk = cachedConfig.coinSystem?.coinsPerTk || 100;
+    
+    document.getElementById('coinDisplay').innerText = Math.floor(coins);
+    document.getElementById('tkDisplay').innerText = (coins / cpTk).toFixed(2);
+    document.getElementById('headerName').innerText = user.name;
+    document.getElementById('headerPhone').innerText = user.phone;
+
+    document.getElementById('profileName').value = user.name;
+    document.getElementById('profilePhone').value = user.phone;
+    document.getElementById('profileEmail').value = user.email || '';
+
+    document.getElementById('spinStatus').innerText = Math.max(0, cachedConfig.limitSpin - (user.spinUsed || 0)) + ' left today';
+    document.getElementById('scratchStatus').innerText = Math.max(0, cachedConfig.limitScratch - (user.scratchUsed || 0)) + ' left today';
+    document.getElementById('quizStatus').innerText = Math.max(0, cachedConfig.limitQuiz - (user.quizUsed || 0)) + ' left today';
+    document.getElementById('captchaStatus').innerText = Math.max(0, cachedConfig.limitCaptcha - (user.captchaUsed || 0)) + ' left today';
+    document.getElementById('dailyClaimStatus').innerText = user.lastClaimDate === new Date().toDateString() ? 'Claimed ✓' : 'Available';
+
+    document.getElementById('totalRefer').innerText = user.totalRef || 0;
+    document.getElementById('referIncome').innerText = user.refIncome || 0;
+    document.getElementById('referStatus').innerText = (user.totalRef || 0) + ' refer';
+
+    if(user.notifications && user.notifications.length > 0) document.getElementById('notifBadge').style.display = 'block';
+    else document.getElementById('notifBadge').style.display = 'none';
+
+    const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    document.getElementById('referLink').value = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
+
+    renderHistory(user);
+    renderLeaderboard();
+  }
+
+  async function updateUserInFB(updatedData) {
+    if(!currentUserKey) return;
+    await window.fbUpdate(window.fbRef(window.fbDB, 'users/' + currentUserKey), updatedData);
+    const usersObj = await fetchAllUsers();
+    updateUI(usersObj[currentUserKey]);
   }
 
   function logout() {
@@ -311,21 +525,150 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     setTimeout(() => location.reload(), 1000);
   }
 
+  function openModal(id) { document.getElementById(id).classList.add('active'); if(id === 'quizModal') loadQuizQuestions(); if(id === 'captchaModal') loadCaptchaQuestions(); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  function showHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  async function claimDaily() {
+    const usersObj = await fetchAllUsers();
+    const user = usersObj[currentUserKey];
+    if(user.lastClaimDate === new Date().toDateString()) return showToast('Already claimed today!');
+    
+    user.balance = (user.balance || 0) + cachedConfig.dailyClaim;
+    user.lastClaimDate = new Date().toDateString();
+    await updateUserInFB(user);
+    showToast(`🎉 ${cachedConfig.dailyClaim} Coins Claimed!`);
+    closeModal('dailyClaimModal');
+  }
+
+  async function requestSpin() {
+    const usersObj = await fetchAllUsers();
+    const user = usersObj[currentUserKey];
+    if((user.spinUsed || 0) >= cachedConfig.limitSpin) return showToast('No spins left today!');
+
+    const rewards = [2, 5, 1, 10, 3, 2, 1, 15];
+    const reward = rewards[Math.floor(Math.random() * rewards.length)];
+    
+    user.spinUsed = (user.spinUsed || 0) + 1;
+    user.balance = (user.balance || 0) + reward;
+    await updateUserInFB(user);
+    showToast(`Won 🪙${reward} Coins!`);
+  }
+
+  async function requestScratch() {
+    const usersObj = await fetchAllUsers();
+    const user = usersObj[currentUserKey];
+    if((user.scratchUsed || 0) >= cachedConfig.limitScratch) return showToast('Limit reached!');
+
+    const reward = Math.floor(Math.random() * 10) + 1;
+    user.scratchUsed = (user.scratchUsed || 0) + 1;
+    user.balance = (user.balance || 0) + reward;
+    await updateUserInFB(user);
+    showToast(`Scratched 🪙${reward} Coins!`);
+  }
+
+  let currentQuizAns = 0;
+  function loadQuizQuestions() {
+    const a = Math.floor(Math.random() * 10) + 1;
+    const b = Math.floor(Math.random() * 10) + 1;
+    currentQuizAns = a + b;
+    document.getElementById('quizQuestion').textContent = `${a} + ${b} = ?`;
+    const opts = [currentQuizAns, currentQuizAns + 2, currentQuizAns - 1].sort(() => Math.random() - 0.5);
+    document.getElementById('quizOptions').innerHTML = opts.map(o => `<div class="quiz-opt" onclick="verifyQuiz(${o})">${o}</div>`).join('');
+  }
+
+  async function verifyQuiz(val) {
+    if(val === currentQuizAns) {
+      const usersObj = await fetchAllUsers();
+      const user = usersObj[currentUserKey];
+      user.quizUsed = (user.quizUsed || 0) + 1;
+      user.balance = (user.balance || 0) + 2;
+      await updateUserInFB(user);
+      showToast('✅ Correct! +2 Coins');
+      closeModal('quizModal');
+    } else {
+      showToast('❌ Wrong Answer!');
+    }
+  }
+
+  function loadCaptchaQuestions() {
+    document.getElementById('captchaBox').textContent = Math.floor(1000 + Math.random() * 9000);
+  }
+
+  async function verifyCaptcha() {
+    const input = document.getElementById('captchaInput').value.trim();
+    if(input === document.getElementById('captchaBox').textContent) {
+      const usersObj = await fetchAllUsers();
+      const user = usersObj[currentUserKey];
+      user.captchaUsed = (user.captchaUsed || 0) + 1;
+      user.balance = (user.balance || 0) + 1;
+      await updateUserInFB(user);
+      showToast('✅ Verified! +1 Coin');
+      closeModal('captchaModal');
+    } else {
+      showToast('❌ Wrong Captcha!');
+    }
+  }
+
+  async function submitWithdraw() {
+    const num = document.getElementById('withdrawNumber').value.trim();
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+    if(!num || !amount) return showToast('সব তথ্য দিন!');
+
+    const usersObj = await fetchAllUsers();
+    const user = usersObj[currentUserKey];
+    if(amount > (user.balance || 0)) return showToast('অপর্যাপ্ত ব্যালেন্স!');
+
+    user.balance -= amount;
+    user.withdrawHistory = user.withdrawHistory || [];
+    user.withdrawHistory.unshift({ method: 'Mobile Recharge / Bkash', amount, number: num, status: 'pending', date: new Date().toLocaleString() });
+    
+    await updateUserInFB(user);
+    showToast('✅ উইথড্র রিকোয়েস্ট জমা হয়েছে!');
+    document.getElementById('withdrawNumber').value = '';
+    document.getElementById('withdrawAmount').value = '';
+  }
+
+  function renderHistory(user) {
+    const el = document.getElementById('withdrawHistory');
+    if(!user.withdrawHistory || user.withdrawHistory.length === 0) { el.innerHTML = '<p style="color:#888;">কোনো হিস্ট্রি নেই</p>'; return; }
+    el.innerHTML = user.withdrawHistory.map(h => `<div class="history-item"><div style="display:flex;justify-content:space-between;"><strong>${h.method}</strong><span>🪙 ${h.amount}</span></div><div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="font-size:11px;color:#888;">${h.date}</span><span class="status ${h.status}">${h.status}</span></div></div>`).join('');
+  }
+
+  async function renderLeaderboard() {
+    const usersObj = await fetchAllUsers();
+    const list = Object.values(usersObj).map(u => ({ name: u.name, amount: u.balance || 0 })).sort((a,b) => b.amount - a.amount).slice(0, 10);
+    document.getElementById('leaderboardList').innerHTML = list.map((l, i) => `<div class="lb-item"><div class="lb-rank">#${i+1}</div><div class="lb-info"><h4>${l.name}</h4></div><div class="lb-amount">🪙 ${Math.floor(l.amount)}</div></div>`).join('');
+  }
+
   function copyRefer() {
     const input = document.getElementById('referLink');
     input.select();
     navigator.clipboard.writeText(input.value);
-    showToast('✅ লিংক কপি হয়েছে!');
+    showToast('✅ রেফার লিংক কপি হয়েছে!');
   }
 
-  // অটো রেফার কোড লিংক থেকে ক্যাপচার করা
-  window.addEventListener('DOMContentLoaded', () => {
+  function initBannerSlider() {
+    const track = document.getElementById('bannerTrack');
+    const dots = document.getElementById('bannerDots');
+    if(!track) return;
+    const banners = [
+      { title: '🎁 রেফার করে কামান', sub: 'বন্ধুকে রেফার করে পান বোনাস!', color1: '#667eea', color2: '#764ba2' },
+      { title: '🎡 লাকি স্পিন', sub: 'প্রতিদিন স্পিন করে কয়েন জিতুন!', color1: '#11998e', color2: '#38ef7d' }
+    ];
+    track.innerHTML = banners.map(b => `<div class="banner-slide" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2});"><div class="banner-slide-content"><h3>${b.title}</h3><p>${b.sub}</p></div></div>`).join('');
+    dots.innerHTML = banners.map((_, i) => `<div class="banner-dot ${i === 0 ? 'active' : ''}"></div>`).join('');
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    await fetchConfig();
     const params = new URLSearchParams(window.location.search);
-    const refCode = params.get('ref');
-    if(refCode) {
-      document.getElementById('regReferCode').value = decodeURIComponent(refCode);
+    const ref = params.get('ref');
+    if(ref) {
+      document.getElementById('regReferCode').value = decodeURIComponent(ref);
       document.getElementById('loginForm').style.display = 'none';
       document.getElementById('registerForm').style.display = 'block';
+      document.getElementById('refBanner').style.display = 'block';
     }
     checkLoginStatus();
   });
