@@ -431,29 +431,27 @@
   document.addEventListener('focusout', (e) => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isTyping = false; });
 
   // ================= ✅ Dynamic Coin System =================
-  // Default: 100 Coins = 1 Tk
-  // Admin can change coinPerTk (100 by default) and tkPerCoin (1 by default)
-  let COINS_PER_TK = 100; // will be loaded from config
-  let TK_PER_COIN = 1;    // will be loaded from config (₹1 per X coins)
+  let COINS_PER_TK = 100;
+  let TK_PER_COIN_BLOCK = 1;
 
   function loadRatesFromConfig() {
     const data = getMasterData();
     if(data.config && data.config.coinSystem) {
       COINS_PER_TK = data.config.coinSystem.coinsPerTk || 100;
-      TK_PER_COIN = data.config.coinSystem.tkPerCoinsBlock || 1;
+      TK_PER_COIN_BLOCK = data.config.coinSystem.tkPerCoinsBlock || 1;
     }
   }
 
   function coinsToTk(coins) {
     if(!COINS_PER_TK || COINS_PER_TK <= 0) return 0;
-    return ((coins || 0) / COINS_PER_TK) * TK_PER_COIN;
+    return ((coins || 0) / COINS_PER_TK) * TK_PER_COIN_BLOCK;
   }
   function tkToCoins(tk) {
-    if(!TK_PER_COIN || TK_PER_COIN <= 0) return 0;
-    return Math.floor(((tk || 0) / TK_PER_COIN) * COINS_PER_TK);
+    if(!TK_PER_COIN_BLOCK || TK_PER_COIN_BLOCK <= 0) return 0;
+    return Math.floor(((tk || 0) / TK_PER_COIN_BLOCK) * COINS_PER_TK);
   }
   function getRateText() {
-    return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN}`;
+    return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN_BLOCK}`;
   }
 
   function switchAuth(type) {
@@ -585,7 +583,6 @@
     if(!data.config) data.config = {};
     if(!data.config.fraud) data.config.fraud = { forceAd: true, vpnBlock: false, multiAccountBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 };
     
-    // ✅ Default coin system
     if(!data.config.coinSystem) {
       data.config.coinSystem = { coinsPerTk: 100, tkPerCoinsBlock: 1 };
     }
@@ -661,7 +658,6 @@
     const data = getMasterData();
     const c = data.config;
 
-    // ✅ Refresh rates from config every time
     loadRatesFromConfig();
 
     if(u.isBlocked) {
@@ -708,8 +704,6 @@
 
     document.getElementById('withdrawCoinBalance').innerText = Math.floor(coins);
     document.getElementById('withdrawTkBalance').innerText = coinsToTk(coins).toFixed(2);
-    
-    // ✅ Dynamic rate display
     document.getElementById('rateDisplayText').innerText = getRateText();
 
     if(u.photo) { document.getElementById('headerAvatar').src = u.photo; document.getElementById('profileImg').src = u.photo; }
@@ -775,14 +769,23 @@
     toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  // ================= ✅ FIXED: Spam Timer =================
   function checkSpamTimer() {
     const data = getMasterData();
     const user = getCurrentUser();
-    const spamTimer = data.config.fraud.spamTimer || 0;
-    const now = Date.now();
     
-    if (user.lastActionTime && (now - user.lastActionTime) < (spamTimer * 1000)) {
-      const remaining = Math.ceil((spamTimer * 1000 - (now - user.lastActionTime)) / 1000);
+    // অ্যাডমিন প্যানেল থেকে spamTimer লোড করা হচ্ছে (সেকেন্ডে)
+    const spamTimer = data.config.fraud?.spamTimer || 0;
+    
+    if (spamTimer <= 0) return true; // ০ হলে কোনো লিমিট নেই
+    
+    const now = Date.now();
+    const lastTime = user.lastActionTime || 0;
+    const timeDiff = now - lastTime;
+    const requiredTime = spamTimer * 1000; // সেকেন্ডকে মিলি সেকেন্ডে রূপান্তর
+    
+    if (lastTime > 0 && timeDiff < requiredTime) {
+      const remaining = Math.ceil((requiredTime - timeDiff) / 1000);
       showToast(`⏳ অপেক্ষা করুন! পরের টাস্ক করতে আরও ${remaining} সেকেন্ড বাকি।`);
       return false;
     }
@@ -798,10 +801,34 @@
     }
   }
 
+  // ================= ✅ FIXED: Force Ad Watch Check =================
+  function checkForceAd() {
+    const data = getMasterData();
+    // অ্যাডমিন প্যানেল থেকে forceAd চেক করা হচ্ছে
+    const isForceAdEnabled = data.config.fraud?.forceAd === true;
+    return isForceAdEnabled; 
+  }
+
+  // ================= ✅ FIXED: VPN Warning Check =================
+  function checkVPNWarning() {
+    const data = getMasterData();
+    if(data.config.fraud?.vpnBlock === true) {
+      // এখানে সিম্পল একটা ওয়ার্নিং মেসেজ দেখানো হচ্ছে
+      // (প্রকৃত VPN ডিটেকশন ব্রাউজারে সম্ভব নয়, তাই শুধু মেসেজ)
+      const randomVpnWarn = Math.random() < 0.3; // ৩০% চান্সে ওয়ার্নিং দেখাবে টেস্টের জন্য
+      if(randomVpnWarn) {
+        showToast('⚠️ ভিপিএন ব্যবহার করা নিষেধ! আপনার অ্যাকাউন্ট ব্লক হতে পারে।');
+      }
+    }
+  }
+
   function openModal(id) {
     updateUI();
     if (id === 'wheelModal' || id === 'scratchModal' || id === 'quizModal' || id === 'captchaModal' || id === 'visitModal' || id === 'videoModal') {
       if (!checkSpamTimer()) return;
+      
+      // VPN চেক (শুধু ওয়ার্নিং)
+      checkVPNWarning();
     }
 
     document.getElementById(id).classList.add('active');
@@ -845,17 +872,70 @@
   let adTimers = { claim: null, spin: null, scratch: null, quiz: null, captcha: null };
   let adStatus = { claim: false, spin: false, scratch: false };
 
+  // ================= ✅ FIXED: Force Ad Watch Logic =================
   function playAd(type) {
     if(type === 'claim' && getCurrentUser().lastClaimDate === new Date().toDateString()) return;
 
     const c = getMasterData().config;
+    const isForceAdEnabled = c.fraud?.forceAd === true;
+    
+    // যদি Force Ad বন্ধ থাকে, তবে সরাসরি রিওয়ার্ড দিন
+    if(!isForceAdEnabled) {
+      const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+      
+      if(type === 'claim') { 
+        user.balance = (user.balance || 0) + data.config.dailyClaim; 
+        user.lastClaimDate = new Date().toDateString();
+        saveMasterData(data); updateUI(); showToast(`🎉 🪙 ${data.config.dailyClaim} Coins Claimed!`); closeModal('dailyClaimModal');
+        logUserActivity(`🎁 ডেইলি ক্লেইম করেছে (+🪙${data.config.dailyClaim})`); updateLastActionTime();
+      }
+      if(type === 'spin') executeSpin();
+      if(type === 'scratch') executeScratch();
+      if(type === 'quiz') { 
+        user.quizUsed = (user.quizUsed || 0) + 1; 
+        user.balance = (user.balance || 0) + data.config.quizReward;
+        saveMasterData(data); updateUI(); showToast(`✅ সঠিক! +🪙${data.config.quizReward} Coins`);
+        logUserActivity(`🧮 ম্যাথ কুইজ খেলেছে (+🪙${data.config.quizReward})`); updateLastActionTime();
+        
+        if((user.quizUsed || 0) < data.config.limitQuiz) {
+          document.getElementById('quizContent').style.display = 'block'; loadQuizQuestions();
+        } else {
+          document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
+          document.getElementById('quizOptions').innerHTML = '';
+          document.getElementById('quizVerifyBtn').style.display = 'none';
+        }
+      }
+      if(type === 'captcha') { 
+        user.captchaUsed = (user.captchaUsed || 0) + 1; 
+        user.balance = (user.balance || 0) + data.config.captchaReward;
+        saveMasterData(data); updateUI(); showToast(`✅ Verified! +🪙${data.config.captchaReward} Coins`);
+        logUserActivity(`🔐 ক্যাপচা সলভ করেছে (+🪙${data.config.captchaReward})`); updateLastActionTime();
+        
+        if((user.captchaUsed || 0) < data.config.limitCaptcha) {
+          document.getElementById('captchaContent').style.display = 'block'; loadCaptchaQuestions();
+        } else {
+          document.getElementById('captchaBox').textContent = 'DONE';
+          document.getElementById('captchaInput').disabled = true;
+        }
+      }
+      return;
+    }
+
+    // যদি Force Ad চালু থাকে, তবে অ্যাড দেখাবে
     const section = document.getElementById(type + 'AdSection');
     const iframe = document.getElementById(type + 'AdIframe');
     const timerBadge = document.getElementById(type + 'AdTimer');
+    
+    if(!section || !iframe || !timerBadge) return; // safety check
+
     section.style.display = 'block';
     const joiner = c.adUrl.includes('?') ? '&' : '?';
     iframe.src = c.adUrl + joiner + 'autoplay=1&mute=1';
-    let timeLeft = c.adDuration; timerBadge.textContent = timeLeft + 's'; adStatus[type] = false;
+    
+    let timeLeft = c.adDuration || 15; 
+    timerBadge.textContent = timeLeft + 's'; 
+    adStatus[type] = false;
+    
     if(type === 'claim') document.getElementById('claimBtn').disabled = true;
     if(type === 'spin') { document.getElementById('spinBtn').disabled = true; document.getElementById('spinBtn').textContent = 'অ্যাড চলছে...'; }
     if(type === 'scratch') document.getElementById('scratchBox').textContent = 'অ্যাড চলছে...';
@@ -1190,6 +1270,7 @@
     selectedMethodData = data.config.withdrawMethods[index];
   }
 
+  // ================= ✅ FIXED: Max Withdraw Limit Check =================
   function submitWithdraw() {
     const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
     if(!selectedMethodData) return showToast('Select method!');
@@ -1201,7 +1282,11 @@
     
     const tkAmt = coinsToTk(coinsAmt);
     
-    if(data.config.fraud.maxWithdraw > 0 && tkAmt > data.config.fraud.maxWithdraw) return showToast(`❌ Max withdraw limit is ৳${data.config.fraud.maxWithdraw} (🪙 ${tkToCoins(data.config.fraud.maxWithdraw)} coins)`);
+    // Max Withdraw চেক (অ্যাডমিন প্যানেল থেকে)
+    const maxWithdrawTk = data.config.fraud?.maxWithdraw || 0;
+    if(maxWithdrawTk > 0 && tkAmt > maxWithdrawTk) {
+      return showToast(`❌ Max withdraw limit is ৳${maxWithdrawTk} (🪙 ${tkToCoins(maxWithdrawTk)} coins)`);
+    }
     
     const minCoinsRequired = tkToCoins(selectedMethodData.minAmount);
     if(coinsAmt < minCoinsRequired) return showToast(`Min 🪙${minCoinsRequired} (৳${selectedMethodData.minAmount}) required!`);
