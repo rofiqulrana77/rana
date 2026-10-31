@@ -445,6 +445,14 @@
           
           <div class="fraud-row">
             <div class="fraud-info">
+              <b>VPN Block (ভিপিএন ব্লক)</b>
+              <small>ইউজাররা ভিপিএন (VPN) ব্যবহার করে অ্যাকাউন্ট খোলা বা টাস্ক করা রোধ করবে।</small>
+            </div>
+            <label class="switch"><input type="checkbox" id="fraudVpnBlock"><span class="slider"></span></label>
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
               <b>Force Ad Watch</b>
               <small>ইউজারকে বিজ্ঞাপন না দেখে কোনো টাস্ক বা রিওয়ার্ড নিতে দেবে না।</small>
             </div>
@@ -624,7 +632,7 @@
 <script>
   // Firebase Configuration & Initialization
   const firebaseConfig = {
-apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
+    apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   authDomain: "rofiqul.firebaseapp.com",
   databaseURL: "https://rofiqul-default-rtdb.firebaseio.com",
   projectId: "rofiqul",
@@ -1407,6 +1415,7 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
 
   function loadFraudSettings() {
     const f = (getData().config && getData().config.fraud) || {};
+    document.getElementById('fraudVpnBlock').checked = f.vpnBlock || false;
     document.getElementById('fraudForceAd').checked = f.forceAd || false;
     document.getElementById('fraudDeviceBlock').checked = f.deviceBlock !== false;
     document.getElementById('fraudIpBlock').checked = f.ipBlock !== false;
@@ -1418,6 +1427,7 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     const data = getData();
     if(!data.config) data.config = {};
     data.config.fraud = {
+      vpnBlock: document.getElementById('fraudVpnBlock').checked,
       forceAd: document.getElementById('fraudForceAd').checked, 
       deviceBlock: document.getElementById('fraudDeviceBlock').checked,
       ipBlock: document.getElementById('fraudIpBlock').checked,
@@ -1426,7 +1436,7 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
       spamTimer: +document.getElementById('fraudSpamTimer').value || 0
     };
     setData(data); 
-    showToast('🛡️ Fraud Settings Saved & Now Live on User App!', '#ef4444');
+    showToast('🛡️ Fraud Settings Saved & Now Live on User App!', '#10b981');
   }
 
   function loadNotifUsers() {
@@ -1499,7 +1509,7 @@ apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
     if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!', '#ef4444');
     localStorage.setItem('admin_password', newPass);
     document.getElementById('oldAdminPass').value = ''; 
-    document.getElementById('newAdminPass').value = ''; 
+    document.getElementById('newPass').value = ''; 
     document.getElementById('confirmAdminPass').value = '';
     showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!', '#10b981');
   }
