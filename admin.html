@@ -625,12 +625,12 @@
   // Firebase Configuration & Initialization
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
     projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
   };
 
   firebase.initializeApp(firebaseConfig);
@@ -754,14 +754,13 @@
   ];
 
   function initFirebaseSync() {
-    db.ref('/').on('value', (snapshot) => {
+    db.ref('master_db').on('value', (snapshot) => {
       let data = snapshot.val();
       if(!data) {
         data = { users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] };
-        db.ref('/').set(data);
+        db.ref('master_db').set(data);
       }
       
-      // Convert users object to array if firebase returns an object (key-value)
       if (data.users && !Array.isArray(data.users)) {
         data.users = Object.values(data.users);
       }
@@ -814,8 +813,7 @@
 
   function setData(data) {
     memoryDb = data;
-    // Convert array back to cleaner firebase structure if needed or save directly
-    db.ref('/').set(data);
+    db.ref('master_db').set(data);
   }
 
   let chartInstance = null;
@@ -1507,7 +1505,7 @@
 
   function clearAllData() {
     if(confirm('Are you absolutely sure? This will delete all data permanently from Firebase?')) {
-      db.ref('/').set({ users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] });
+      db.ref('master_db').set({ users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] });
       showToast('All data cleared! Reloading...', '#ef4444');
       setTimeout(() => location.reload(), 1500);
     }
