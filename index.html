@@ -3,34 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Earning App - Firebase Connected</title>
-<!-- Firebase App (Modular CDN) -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getDatabase, ref, set, get, update, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+<title>Earning App</title>
 
-  // TODO: আপনার অ্যাডমিন প্যানেলের মতো একই ফায়ারবেস কনফিগারেশন এখানে বসিয়ে দিন
-  const firebaseConfig = {
-  apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
-  authDomain: "rofiqul.firebaseapp.com",
-  databaseURL: "https://rofiqul-default-rtdb.firebaseio.com",
-  projectId: "rofiqul",
-  storageBucket: "rofiqul.firebasestorage.app",
-  messagingSenderId: "581913655450",
-  appId: "1:581913655450:web:940302bbd3ba8bd6564723",
-  measurementId: "G-7N3YD934QH"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  window.fbDB = db;
-  window.fbRef = ref;
-  window.fbSet = set;
-  window.fbGet = get;
-  window.fbChild = child;
-  window.fbUpdate = update;
-</script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <style>
   :root {
@@ -73,37 +50,45 @@
   
   .header-right { display: flex; gap: 10px; }
   .icon-btn { position: relative; cursor: pointer; font-size: 22px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+  .icon-btn:active { transform: scale(0.9); }
   .notif-badge { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; background: #ff4757; border-radius: 50%; border: 2px solid #764ba2; display: none; }
   
   .balance-card { background: var(--card-bg); margin: -20px 15px 15px; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; position: relative; z-index: 10; }
   .balance-card .coin-display { color: #f59e0b; font-size: 34px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .balance-card .coin-display .coin-icon { font-size: 30px; }
   .balance-card .tk-display { color: #667eea; font-size: 16px; font-weight: 600; margin-top: 5px; }
   .balance-card p { color: var(--text-sub); font-size: 12px; margin-top: 5px; }
   
-  .banner-slider { margin: 15px 15px 20px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; height: 140px; }
+  .banner-slider { margin: 15px 15px 20px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; height: 140px; touch-action: pan-y; }
   .banner-track { display: flex; height: 100%; transition: transform 0.4s ease-in-out; width: 100%; }
-  .banner-slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; color: white; position: relative; }
+  .banner-slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; color: white; position: relative; overflow: hidden; }
+  .banner-slide::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+  .banner-slide::after { content: ''; position: absolute; bottom: -30%; right: 10%; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+  .banner-slide-content { position: relative; z-index: 2; flex: 1; }
   .banner-slide-content h3 { font-size: 16px; margin-bottom: 5px; font-weight: 700; }
   .banner-slide-content p { font-size: 12px; opacity: 0.9; margin-bottom: 10px; }
-  .banner-slide-content button { background: rgba(255,255,255,0.25); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
-  .banner-slide-icon { font-size: 50px; opacity: 0.9; }
+  .banner-slide-content button { background: rgba(255,255,255,0.25); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(5px); }
+  .banner-slide-icon { font-size: 50px; position: relative; z-index: 2; opacity: 0.9; }
   .banner-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; }
   .banner-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: 0.3s; }
   .banner-dot.active { background: white; width: 20px; border-radius: 4px; }
   
   .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 15px; }
-  .card { background: var(--card-bg); padding: 18px 10px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
+  .card { background: var(--card-bg); padding: 18px 10px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.07); transition: transform 0.2s; }
+  .card:active { transform: scale(0.95); }
   .card .icon { font-size: 30px; margin-bottom: 8px; }
   .card .title { font-size: 13px; font-weight: 600; color: var(--text-main); }
   .card .sub { font-size: 10px; color: var(--text-sub); margin-top: 3px; }
   
   .modal { display: none; position: fixed; inset: 0; background: var(--modal-overlay); z-index: 1000; padding: 20px; overflow-y: auto; }
   .modal.active { display: block; }
-  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 20px; max-width: 450px; margin: 30px auto; position: relative; }
+  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 20px; max-width: 450px; margin: 30px auto; position: relative; animation: slideUp 0.3s; }
+  @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .close-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: #ff4757; color: white; border: none; font-size: 18px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; }
   .modal h3 { margin-bottom: 15px; color: var(--text-main); }
   
   .btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
   .btn-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
   
   .wheel-container { position: relative; width: 250px; height: 250px; margin: 20px auto; }
@@ -111,14 +96,16 @@
   .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 30px; color: #ff4757; z-index: 10; }
   .spin-result { text-align: center; font-size: 16px; font-weight: bold; color: #667eea; margin-top: 10px; min-height: 24px; }
   
-  .scratch-box { width: 250px; height: 150px; margin: 15px auto; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+  .scratch-box { width: 250px; height: 150px; margin: 15px auto; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; cursor: pointer; user-select: none; transition: 0.3s; }
   .scratch-box.revealed { background: #38ef7d; }
   
   .quiz-q { font-size: 20px; font-weight: bold; text-align: center; margin: 15px 0; color: var(--text-main); }
   .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .quiz-opt { padding: 12px; background: #f0f2f5; color: #333; border-radius: 10px; text-align: center; cursor: pointer; font-weight: 600; border: 2px solid transparent; }
+  .quiz-opt.correct { background: #38ef7d; color: white; }
+  .quiz-opt.wrong { background: #ff4757; color: white; }
   
-  .captcha-box { background: #f0f2f5; color: #333; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 5px; border-radius: 10px; margin: 15px 0; text-decoration: line-through; }
+  .captcha-box { background: #f0f2f5; color: #333; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 5px; border-radius: 10px; margin: 15px 0; font-style: italic; text-decoration: line-through; user-select: none; }
   
   input[type="text"], input[type="tel"], input[type="email"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 2px solid #e0e0e0; border-radius: 10px; margin: 8px 0; font-size: 14px; }
   
@@ -133,7 +120,8 @@
   
   .withdraw-option { padding: 15px; background: #f8f9fa; color: #333; border-radius: 10px; margin: 8px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e0e0e0; }
   .withdraw-option.selected { background: #667eea; color: white; border-color: #667eea; }
-  .w-logo { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; background: white; padding: 2px; }
+  .withdraw-option .method-info { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+  .w-logo { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   
   .history-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: var(--text-main); }
   .status { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; }
@@ -141,32 +129,56 @@
   .status.confirm { background: #55efc4; color: #00b894; }
   .status.rejected { background: #ff7675; color: white; }
   
-  .lb-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; color: #333; }
-  .lb-item.me { background: #e3f2fd; border: 2px solid #667eea; }
+  .lb-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; transition: 0.3s; color: #333; }
+  .lb-item.me { background: #e3f2fd; border: 2px solid #667eea; transform: scale(1.02); box-shadow: 0 4px 10px rgba(102,126,234,0.2); }
   .lb-rank { font-size: 20px; font-weight: bold; width: 30px; text-align: center; }
   .lb-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
   .lb-info { flex: 1; }
   .lb-info h4 { font-size: 14px; }
+  .lb-info h4 span { font-size: 10px; background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+  .lb-info p { font-size: 11px; color: #888; }
   .lb-amount { font-weight: bold; color: #f59e0b; font-size: 14px; }
   
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; }
+  .profile-photo-container { text-align: center; margin: 15px 0; }
+  .profile-photo-container img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #667eea; object-fit: cover; }
+  
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   
   #webViewModal { background: var(--card-bg); z-index: 2000; padding: 0; display: none; flex-direction: column; position: fixed; inset: 0; width: 100%; height: 100vh; }
   #webViewModal.active { display: flex; }
-  .webview-header { background: var(--card-bg); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; font-weight: bold; color: var(--text-main); }
-  .webview-timer { color: #ff4757; background: #ffeaa7; padding: 6px 15px; border-radius: 20px; font-weight: bold; }
-  .webview-close { width: 30px; height: 30px; background: #ff4757; color: white; border: none; border-radius: 50%; cursor: pointer; font-weight: bold; }
-  .webview-iframe { flex: 1; width: 100%; border: none; }
+  .webview-header { background: var(--card-bg); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; font-size: 16px; font-weight: bold; color: var(--text-main); }
+  .webview-header .title { display: flex; align-items: center; gap: 8px; }
+  .webview-timer { color: #ff4757; background: #ffeaa7; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 15px; }
+  .webview-close { width: 30px; height: 30px; background: #ff4757; color: white; border: none; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .webview-iframe { flex: 1; width: 100%; border: none; height: 100%; }
   
   .ad-video-container { width: 100%; background: #000; border-radius: 10px; overflow: hidden; position: relative; margin: 15px 0; border: 2px solid #333; }
   .ad-video-container iframe { width: 100%; height: 200px; border: none; display: block; }
-  .ad-timer-badge { position: absolute; top: 10px; right: 10px; background: rgba(255, 71, 87, 0.9); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 10; }
+  .ad-timer-badge { position: absolute; top: 10px; right: 10px; background: rgba(255, 71, 87, 0.9); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+  
+  .policy-box { background: #f8f9fa; color: #444; border-radius: 10px; padding: 15px; font-size: 13px; line-height: 1.6; max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e0e0e0; }
+  .policy-box h4 { color: #667eea; margin: 10px 0 5px; font-size: 14px; }
+  .policy-box p { margin-bottom: 8px; }
+  .policy-box ul { margin-left: 20px; margin-bottom: 8px; }
+  .policy-box li { margin-bottom: 5px; }
+  
+  .logout-btn { background: linear-gradient(135deg, #ff4757, #ff6b81); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; }
+  .join-date-badge { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 5px; }
+  
+  .change-pass-box { background: #fff3cd; border: 1px solid #ffeeba; border-radius: 10px; padding: 15px; margin-top: 15px; }
+  .change-pass-box h4 { color: #856404; margin-bottom: 10px; font-size: 14px; }
+  
+  .notif-item { background: #f8f9fa; color: #333; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; font-size: 13px; }
+  .notif-item .time { font-size: 11px; color: #666; margin-top: 6px; display: block; font-weight: 500; }
   
   .ref-banner { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
-  .logout-btn { background: linear-gradient(135deg, #ff4757, #ff6b81); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; }
-  .notif-item { background: #f8f9fa; color: #333; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; font-size: 13px; }
-  .notif-item .time { font-size: 11px; color: #666; margin-top: 6px; display: block; }
+
+  .reward-coin { color: #f59e0b; font-weight: bold; }
+
+  .withdraw-balance-box { background: #fef3c7; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
+  .withdraw-balance-box .balance-row { font-size: 13px; color: #92400e; font-weight: bold; }
+  .withdraw-balance-box .rate-row { font-size: 11px; color: #78350f; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #f59e0b; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -223,7 +235,7 @@
     <div class="card" onclick="openModal('captchaModal')"><div class="icon">🔐</div><div class="title">Captcha Solver</div><div class="sub" id="captchaStatus">10 left today</div></div>
     <div class="card" onclick="openModal('visitModal')"><div class="icon">🌐</div><div class="title">Visit Website</div><div class="sub" id="visitStatus">10 links · 1 min</div></div>
     <div class="card" onclick="openModal('videoModal')"><div class="icon">📺</div><div class="title">Watch Video</div><div class="sub" id="videoStatus">10 links · 1 min</div></div>
-    <div class="card" onclick="openModal('withdrawModal')"><div class="icon">💸</div><div class="title">Withdraw</div><div class="sub">Min Coins</div></div>
+    <div class="card" onclick="openModal('withdrawModal')"><div class="icon">💸</div><div class="title">Withdraw</div><div class="sub">Min 500 Coins</div></div>
     <div class="card" onclick="openModal('leaderboardModal')"><div class="icon">🏆</div><div class="title">Leaderboard</div><div class="sub">Top earners</div></div>
     <div class="card" onclick="openModal('referModal')"><div class="icon">🔗</div><div class="title">Refer</div><div class="sub" id="referStatus">0 refer</div></div>
   </div>
@@ -239,7 +251,7 @@
 
   <div id="webViewModal" class="modal">
     <div class="webview-header"><div class="title" id="webViewTitle">🌐 Visit Website</div><div class="webview-timer" id="webViewTimer">60s</div><button class="webview-close" onclick="closeWebView()">×</button></div>
-    <iframe id="webViewIframe" class="webview-iframe" src="about:blank"></iframe>
+    <iframe id="webViewIframe" class="webview-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
   </div>
 
   <div class="modal" id="dailyClaimModal">
@@ -247,9 +259,10 @@
       <button class="close-btn" onclick="closeModal('dailyClaimModal')">×</button>
       <h3>🎁 Daily Claim</h3>
       <div id="claimAdSection" style="display:none; margin-top: 15px;">
-        <div class="ad-video-container"><div class="ad-timer-badge" id="claimAdTimer">15s</div><iframe id="claimAdIframe" src=""></iframe></div>
+        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 বিজ্ঞাপনটি শেষ হওয়া পর্যন্ত অপেক্ষা করুন!</p>
+        <div class="ad-video-container"><div class="ad-timer-badge" id="claimAdTimer">15s</div><iframe id="claimAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
       </div>
-      <p style="text-align:center;color:#666;margin:15px 0;">Claim Daily Reward</p>
+      <p style="text-align:center;color:#666;margin:15px 0;">Claim <span class="reward-coin">🪙 <span id="dailyRewardText">5</span> Coins</span> every 24 hours</p>
       <button class="btn btn-green" id="claimBtn" onclick="claimDaily()">Claim Now</button>
     </div>
   </div>
@@ -259,11 +272,13 @@
       <button class="close-btn" onclick="closeModal('wheelModal')">×</button>
       <h3>🎡 Lucky Spin</h3>
       <div id="spinAdSection" style="display:none; margin-top: 15px;">
-        <div class="ad-video-container"><div class="ad-timer-badge" id="spinAdTimer">15s</div><iframe id="spinAdIframe" src=""></iframe></div>
+        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 স্পিন করার আগে বিজ্ঞাপনটি দেখুন!</p>
+        <div class="ad-video-container"><div class="ad-timer-badge" id="spinAdTimer">15s</div><iframe id="spinAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
       </div>
       <div class="wheel-container"><div class="wheel-pointer">▼</div><div class="wheel" id="wheel"></div></div>
       <div class="spin-result" id="spinResult"></div>
       <button class="btn" id="spinBtn" onclick="requestSpin()">Spin Now</button>
+      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="spinLeft">10</span>/10</p>
     </div>
   </div>
 
@@ -272,9 +287,11 @@
       <button class="close-btn" onclick="closeModal('scratchModal')">×</button>
       <h3>🎫 Scratch Card</h3>
       <div id="scratchAdSection" style="display:none; margin-top: 15px;">
-        <div class="ad-video-container"><div class="ad-timer-badge" id="scratchAdTimer">15s</div><iframe id="scratchAdIframe" src=""></iframe></div>
+        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 স্ক্র্যাচ করার আগে বিজ্ঞাপনটি দেখুন!</p>
+        <div class="ad-video-container"><div class="ad-timer-badge" id="scratchAdTimer">15s</div><iframe id="scratchAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
       </div>
       <div class="scratch-box" id="scratchBox" onclick="requestScratch()">Tap to Scratch</div>
+      <p style="text-align:center;font-size:12px;color:#888;">Remaining: <span id="scratchLeft">10</span>/10</p>
     </div>
   </div>
 
@@ -282,11 +299,16 @@
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('quizModal')">×</button>
       <h3>🧮 Math Quiz</h3>
+      <div id="quizAdSection" style="display:none; margin-top: 15px;">
+        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 সঠিক উত্তরের জন্য বিজ্ঞাপনটি দেখুন!</p>
+        <div class="ad-video-container"><div class="ad-timer-badge" id="quizAdTimer">15s</div><iframe id="quizAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
+      </div>
       <div id="quizContent">
         <div class="quiz-q" id="quizQuestion">Loading...</div>
         <div class="quiz-options" id="quizOptions"></div>
         <button class="btn btn-green" id="quizVerifyBtn" style="display:none; margin-top: 15px;" onclick="verifyQuizAnswer()">Verify Answer</button>
       </div>
+      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="quizLeft">10</span>/10</p>
     </div>
   </div>
 
@@ -294,44 +316,77 @@
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('captchaModal')">×</button>
       <h3>🔐 Captcha Solver</h3>
+      <div id="captchaAdSection" style="display:none; margin-top: 15px;">
+        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 সঠিক ক্যাপচার জন্য বিজ্ঞাপনটি দেখুন!</p>
+        <div class="ad-video-container"><div class="ad-timer-badge" id="captchaAdTimer">15s</div><iframe id="captchaAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
+      </div>
       <div id="captchaContent"><div class="captcha-box" id="captchaBox">ABCD</div><input type="text" id="captchaInput" placeholder="Type the captcha"><button class="btn" onclick="verifyCaptcha()">Verify</button></div>
+      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="captchaLeft">10</span>/10</p>
     </div>
   </div>
 
   <div class="modal" id="visitModal">
-    <div class="modal-content"><button class="close-btn" onclick="closeModal('visitModal')">×</button><h3>🌐 Visit Website</h3><div id="visitList"></div></div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('visitModal')">×</button>
+      <h3>🌐 Visit Website</h3>
+      <p style="font-size:12px;color:#ff4757;margin-bottom:10px;font-weight:bold;text-align:center;">⚠️ অ্যাপের ভেতরেই ওয়েবসাইটটি ওপেন হবে, ৬০ সেকেন্ড থাকুন</p>
+      <div id="visitList"></div>
+    </div>
   </div>
 
   <div class="modal" id="videoModal">
-    <div class="modal-content"><button class="close-btn" onclick="closeModal('videoModal')">×</button><h3>📺 Watch Video</h3><div id="videoList"></div></div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('videoModal')">×</button>
+      <h3>📺 Watch Video</h3>
+      <p style="font-size:12px;color:#ff4757;margin-bottom:10px;font-weight:bold;text-align:center;">⚠️ অ্যাপের ভেতরেই ভিডিওটি ওপেন হবে, ৬০ সেকেন্ড দেখুন</p>
+      <div id="videoList"></div>
+    </div>
   </div>
 
   <div class="modal" id="withdrawModal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('withdrawModal')">×</button>
       <h3>💸 Withdraw</h3>
+      <div class="withdraw-balance-box">
+        <div class="balance-row">🪙 আপনার ব্যালেন্স: <span id="withdrawCoinBalance">0</span> Coins</div>
+        <div class="balance-row" style="margin-top: 4px;">≈ ৳<span id="withdrawTkBalance">0.00</span></div>
+        <div class="rate-row">💱 কনভার্শন রেট: <span id="rateDisplayText">100 Coins = ৳1</span></div>
+      </div>
       <div id="withdrawOptions"></div>
-      <input type="text" id="withdrawNumber" placeholder="Enter number/wallet address">
+      <input type="text" id="withdrawNumber" placeholder="Enter your number/wallet address">
       <input type="number" id="withdrawAmount" placeholder="Enter coins amount">
+      <p style="font-size: 11px; color: #ff4757; margin-top: -5px; margin-bottom: 8px;">💡 আপনি যত কয়েন উইথড্র করবেন, সেটা টাকায় কনভার্ট হবে</p>
       <button class="btn btn-green" onclick="submitWithdraw()">Request Withdraw</button>
-      <h4 style="margin:20px 0 10px;">📜 Withdraw History</h4>
+      <h4 style="margin:20px 0 10px; color:var(--text-main);">📜 Withdraw History</h4>
       <div id="withdrawHistory"></div>
     </div>
   </div>
 
   <div class="modal" id="leaderboardModal">
-    <div class="modal-content"><button class="close-btn" onclick="closeModal('leaderboardModal')">×</button><h3>🏆 Leaderboard</h3><div id="leaderboardList"></div></div>
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal('leaderboardModal')">×</button>
+      <h3>🏆 Leaderboard</h3>
+      <p style="font-size:11px;color:#888;margin-bottom:10px;">Last updated: <span id="lbDate"></span></p>
+      <div id="leaderboardList"></div>
+    </div>
   </div>
 
   <div class="modal" id="referModal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('referModal')">×</button>
       <h3>🔗 Refer & Earn</h3>
-      <input type="text" id="referLink" readonly>
-      <button class="btn" onclick="copyRefer()">Copy Link</button>
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <div style="flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;"><p style="font-size: 11px;">Total Ref</p><h4 id="totalRefer">0</h4></div>
-        <div style="flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center;"><p style="font-size: 11px;">Earnings</p><h4 id="referIncome">0</h4></div>
+      <p style="margin:10px 0; color: #667eea; font-weight: bold; text-align: center;">🎁 রেফার করলে <span class="reward-coin">🪙 <span id="refRewardText">50</span> Coins</span> বোনাস পাবেন!</p>
+      <p style="margin:10px 0;">Your Referral Link:</p>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="referLink" readonly>
+        <button class="btn" style="width:auto;margin:0;padding:10px 15px;" onclick="copyRefer()">Copy</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-green" style="margin:0;" onclick="shareRefer()">📤 Share Link</button>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Total Referrals</p><h3 style="color: #667eea; font-size: 22px; margin-top: 5px;"><span id="totalRefer">0</span></h3></div>
+        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Referral Coins</p><h3 style="color: #f59e0b; font-size: 22px; margin-top: 5px;">🪙 <span id="referIncome">0</span></h3></div>
       </div>
     </div>
   </div>
@@ -339,11 +394,33 @@
   <div class="modal" id="profileModal">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('profileModal')">×</button>
-      <h3>👤 Profile</h3>
-      <input type="text" id="profileName" placeholder="Name">
-      <input type="email" id="profileEmail" placeholder="Email">
-      <input type="tel" id="profilePhone" placeholder="Phone">
+      <h3>👤 My Profile</h3>
+      <div style="text-align:center; margin-bottom: 10px;"><span class="join-date-badge" id="joinDateBadge">📅 Join Date: --</span></div>
+      <div class="profile-photo-container">
+        <img src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff" id="profileImg" alt="Profile"><br><br>
+        <input type="file" accept="image/*" id="photoInput" style="display:none" onchange="uploadPhoto(event)">
+        <button class="btn" style="width:auto;padding:8px 20px;" onclick="document.getElementById('photoInput').click()">Change Photo</button>
+      </div>
+      <label style="font-size:12px;color:var(--text-sub);">Name</label><input type="text" id="profileName" placeholder="Your name">
+      <label style="font-size:12px;color:var(--text-sub);">Gmail</label><input type="email" id="profileEmail" placeholder="your@gmail.com">
+      <label style="font-size:12px;color:var(--text-sub);">Phone Number</label><input type="tel" id="profilePhone" placeholder="+880 1XXXXXXXXX">
       <button class="btn btn-green" onclick="saveProfile()">Save Profile</button>
+      <div class="change-pass-box">
+        <h4>🔒 পাসওয়ার্ড পরিবর্তন করুন</h4>
+        <input type="password" id="oldPassword" placeholder="পুরনো পাসওয়ার্ড দিন">
+        <input type="password" id="newPassword" placeholder="নতুন পাসওয়ার্ড দিন">
+        <input type="password" id="confirmPassword" placeholder="নতুন পাসওয়ার্ড আবার দিন">
+        <button class="btn" style="background: #856404; margin-top: 5px;" onclick="changePassword()">পাসওয়ার্ড আপডেট করুন</button>
+      </div>
+      <h4 style="margin-top: 20px; margin-bottom: 10px; color: var(--text-main); font-size: 15px;">📋 নিয়ম-কানুন ও পলিসি</h4>
+      <div class="policy-box">
+        <h4>১. সাধারণ শর্তাবলী</h4><p>এই অ্যাপটি ব্যবহার করে আপনি আমাদের সমস্ত নিয়ম-কানুন মেনে নিচ্ছেন। কোনো নিয়ম ভঙ্গ হলে আপনার অ্যাকাউন্ট ব্লক করা হবে।</p>
+        <h4>২. কয়েন সিস্টেম</h4><ul><li>প্রতিটি কাজ থেকে আপনি কয়েন পাবেন।</li><li>কনভার্শন রেট অ্যাডমিন প্যানেল থেকে নির্ধারিত হয়।</li><li>উইথড্র করার সময় কয়েন স্বয়ংক্রিয়ভাবে টাকায় রূপান্তরিত হবে।</li></ul>
+        <h4>৩. টাস্ক ও রিওয়ার্ড</h4><ul><li>প্রতিদিন নির্দিষ্ট সংখ্যক টাস্ক সম্পন্ন করা যাবে।</li><li>ভুল উত্তর দিলে কোনো রিওয়ার্ড দেওয়া হবে না।</li><li>ভিপিএন ব্যবহার করে টাস্ক করলে অ্যাকাউন্ট ব্লক হতে পারে।</li></ul>
+        <h4>৪. রেফারেল পলিসি</h4><p>রেফারেল লিংক শুধুমাত্র নতুন ইউজারদের জন্য প্রযোজ্য। একই ব্যক্তি একাধিকবার রেফার করলে বোনাস বাতিল হবে।</p>
+        <h4>৫. উইথড্র পলিসি</h4><ul><li>মিনিমাম উইথড্র অ্যাডমিন প্যানেল থেকে নির্ধারিত হয়।</li><li>উইথড্র রিকোয়েস্ট ২৪-৪৮ ঘণ্টার মধ্যে প্রসেস করা হয়।</li><li>ভুল নাম্বার/ওয়ালেট দিলে টাকা ফেরত দেওয়া হবে না।</li></ul>
+        <h4>৬. ফ্রড পলিসি</h4><ul><li>একই ডিভাইস/আইপি থেকে একাধিক অ্যাকাউন্ট খোলা নিষেধ।</li></ul>
+      </div>
       <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -352,12 +429,55 @@
 <div id="toast" class="toast">Toast Message</div>
 
 <script>
-  let currentUserKey = null;
-  let cachedConfig = { dailyClaim: 5, refBonus: 50, coinSystem: { coinsPerTk: 100 }, limitSpin: 10, limitScratch: 10, limitQuiz: 10, limitCaptcha: 10, limitVisit: 10, limitVideo: 10, adUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' };
+  // --- FIREBASE CONFIGURATION ---
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
 
-  function showToast(msg) {
-    const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let isTyping = false;
+  document.addEventListener('focusin', (e) => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isTyping = true; });
+  document.addEventListener('focusout', (e) => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isTyping = false; });
+
+  let COINS_PER_TK = 100;
+  let TK_PER_COIN_BLOCK = 1;
+
+  function loadRatesFromConfig() {
+    const data = getMasterData();
+    if(data.config && data.config.coinSystem) {
+      COINS_PER_TK = data.config.coinSystem.coinsPerTk || 100;
+      TK_PER_COIN_BLOCK = data.config.coinSystem.tkPerCoinsBlock || 1;
+    }
+  }
+
+  function coinsToTk(coins) {
+    if(!COINS_PER_TK || COINS_PER_TK <= 0) return 0;
+    return ((coins || 0) / COINS_PER_TK) * TK_PER_COIN_BLOCK;
+  }
+  function tkToCoins(tk) {
+    if(!TK_PER_COIN_BLOCK || TK_PER_COIN_BLOCK <= 0) return 0;
+    return Math.floor(((tk || 0) / TK_PER_COIN_BLOCK) * COINS_PER_TK);
+  }
+  function getRateText() {
+    return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN_BLOCK}`;
+  }
+
+  function getClientIpIdentifier() {
+    let ipId = localStorage.getItem('app_client_ip_token');
+    if(!ipId) {
+      ipId = 'ip_' + Math.random().toString(36).substring(2) + Date.now();
+      localStorage.setItem('app_client_ip_token', ipId);
+    }
+    return ipId;
   }
 
   function switchAuth(type) {
@@ -365,112 +485,129 @@
     else { document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; }
   }
 
-  async function fetchAllUsers() {
-    if(!window.fbDB) return {};
-    try {
-      const snap = await window.fbGet(window.fbRef(window.fbDB, 'users'));
-      return snap.exists() ? snap.val() : {};
-    } catch(e) { return {}; }
-  }
-
-  async function fetchConfig() {
-    if(!window.fbDB) return;
-    try {
-      const snap = await window.fbGet(window.fbRef(window.fbDB, 'config'));
-      if(snap.exists()) cachedConfig = { ...cachedConfig, ...snap.val() };
-    } catch(e) {}
-  }
-
-  async function handleRegister() {
+  function handleRegister() {
     const name = document.getElementById('regName').value.trim();
     const phone = document.getElementById('regPhone').value.trim();
     const email = document.getElementById('regEmail').value.trim();
     const password = document.getElementById('regPassword').value.trim();
     const referCode = document.getElementById('regReferCode').value.trim();
     
-    if(!name || !phone || !email || !password) return showToast('❌ সব ঘর পূরণ করুন!');
-    
-    await fetchConfig();
-    const usersObj = await fetchAllUsers();
-    const usersList = Object.entries(usersObj).map(([k, v]) => ({ fbKey: k, ...v }));
-
-    if(usersList.find(u => u.phone === phone)) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
-    if(usersList.find(u => u.email === email)) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
-
-    let referrerKey = null;
-    let referrerObj = null;
-    if(referCode) {
-      const found = usersList.find(u => u.myReferCode === referCode || u.phone === referCode);
-      if(found) {
-        referrerKey = found.fbKey;
-        referrerObj = found;
-      }
+    if(!name || !phone || !email || !password) {
+      return showToast('❌ সব ঘর পূরণ করুন (নাম, ফোন, জিমেইল, পাসওয়ার্ড)!');
     }
     
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!emailRegex.test(email)) {
+      return showToast('❌ সঠিক জিমেইল এড্রেস দিন!');
+    }
+    
+    if(password.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!');
+    
+    const data = getMasterData();
+    const fraudConfig = data.config.fraud || {};
+
+    if(fraudConfig.deviceBlock !== false) {
+      const existingDeviceUser = localStorage.getItem('app_device_registered');
+      if(existingDeviceUser) {
+        return showToast('🚫 এই ডিভাইস থেকে ইতিমধ্যে একটি অ্যাকাউন্ট খোলা হয়েছে! একাধিক অ্যাকাউন্ট খোলা নিষেধ।');
+      }
+    }
+
+    if(fraudConfig.ipBlock !== false) {
+      const currentIpToken = getClientIpIdentifier();
+      const maxAllowedPerIp = fraudConfig.maxAccountsPerIp || 1;
+      
+      const accountsWithSameIp = data.users.filter(u => u.ipToken === currentIpToken);
+      if(accountsWithSameIp.length >= maxAllowedPerIp) {
+        return showToast(`🚫 এই নেটওয়ার্ক/আইপি থেকে সর্বোচ্চ ${maxAllowedPerIp}টি অ্যাকাউন্ট খোলা যাবে!`);
+      }
+    }
+
+    if(data.users.find(u => u.phone === phone)) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+    if(data.users.find(u => u.email === email)) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+
+    let referrer = null;
+    if(referCode) {
+      referrer = data.users.find(u => u.myReferCode === referCode || u.phone === referCode || u.email === referCode);
+      if(!referrer) return showToast('❌ রেফারেল কোডটি সঠিক নয়!');
+      if(referrer.phone === phone) return showToast('❌ নিজের কোড ব্যবহার করা যাবে না!');
+    }
+    
+    const clientIp = getClientIpIdentifier();
     const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
-    const userId = 'user_' + Date.now();
 
     const newUser = { 
-      id: userId, name, phone, email, password, balance: 0, 
-      myReferCode: uniqueReferCode, isBlocked: false, totalRef: 0, refIncome: 0, 
+      id: Date.now(), name, phone, email, password, balance: 0, 
+      myReferCode: uniqueReferCode,
+      isBlocked: false, totalRef: 0, refIncome: 0, 
+      ipToken: clientIp,
+      withdrawHistory: [], notifications: [], 
       spinUsed: 0, scratchUsed: 0, quizUsed: 0, captchaUsed: 0, 
-      visitUsed: [], videoUsed: [], lastClaimDate: '', 
-      withdrawHistory: [], notifications: [], joinDate: new Date().toLocaleDateString() 
+      visitUsed: [], videoUsed: [], lastClaimDate: '', lastResetDate: '', 
+      joinDate: new Date().toLocaleDateString(), lastActionTime: 0 
     };
-
-    try {
-      await window.fbSet(window.fbRef(window.fbDB, 'users/' + userId), newUser);
-
-      if(referrerKey && referrerObj) {
-        const refBonus = cachedConfig.refBonus || 50;
-        referrerObj.balance = (referrerObj.balance || 0) + refBonus;
-        referrerObj.totalRef = (referrerObj.totalRef || 0) + 1;
-        referrerObj.refIncome = (referrerObj.refIncome || 0) + refBonus;
-        referrerObj.notifications = referrerObj.notifications || [];
-        referrerObj.notifications.push({ msg: `🎉 আপনি ${name}-কে রেফার করে ${refBonus} কয়েন পেয়েছেন!`, date: new Date().toLocaleString() });
-
-        await window.fbSet(window.fbRef(window.fbDB, 'users/' + referrerKey), referrerObj);
-      }
-
-      localStorage.setItem('firebase_current_user', userId);
-      showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
-      if(window.location.search.includes('ref=')) window.history.replaceState({}, document.title, window.location.pathname);
-      checkLoginStatus();
-    } catch(e) { showToast('❌ রেজিস্ট্রেশন ব্যর্থ হয়েছে!'); }
+    data.users.push(newUser);
+    
+    if(fraudConfig.deviceBlock !== false) {
+      localStorage.setItem('app_device_registered', 'true');
+    }
+    
+    if(referrer) {
+      const refBonusCoins = data.config.refBonus || 50;
+      referrer.balance = (referrer.balance || 0) + refBonusCoins;
+      referrer.totalRef = (referrer.totalRef || 0) + 1;
+      referrer.refIncome = (referrer.refIncome || 0) + refBonusCoins;
+      referrer.notifications = referrer.notifications || [];
+      referrer.notifications.push({ id: Date.now(), msg: `🎉 আপনি ${name}-কে রেফার করেছেন এবং 🪙 ${refBonusCoins} কয়েন বোনাস পেয়েছেন!`, date: new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+    }
+    
+    saveMasterData(data);
+    localStorage.setItem('app_current_user', newUser.id);
+    showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
+    logUserActivity('📝 নতুন রেজিস্ট্রেশন করেছে (+🪙0)');
+    
+    document.getElementById('regName').value = ''; 
+    document.getElementById('regPhone').value = ''; 
+    document.getElementById('regEmail').value = '';
+    document.getElementById('regPassword').value = ''; 
+    document.getElementById('regReferCode').value = '';
+    
+    if(window.location.search.includes('ref=')) window.history.replaceState({}, document.title, window.location.pathname);
+    checkLoginStatus();
   }
 
-  async function handleLogin() {
+  function handleLogin() {
     const loginInput = document.getElementById('loginInput').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
     
     if(!loginInput || !password) return showToast('ফোন নম্বর/জিমেইল এবং পাসওয়ার্ড দিন!');
     
-    const usersObj = await fetchAllUsers();
-    const userEntry = Object.entries(usersObj).find(([k, u]) => u.phone === loginInput || u.email === loginInput);
+    const data = getMasterData();
+    const user = data.users.find(u => u.phone === loginInput || u.email === loginInput);
     
-    if(!userEntry) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
-    const [fbKey, user] = userEntry;
-    
+    if(!user) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
     if(user.password !== password) return showToast('❌ পাসওয়ার্ড সঠিক নয়!');
     if(user.isBlocked) return showToast('🚫 আপনার অ্যাকাউন্ট ব্লক করা হয়েছে!');
     
-    localStorage.setItem('firebase_current_user', fbKey);
+    localStorage.setItem('app_current_user', user.id);
     showToast('✅ লগইন সফল হয়েছে!');
+    logUserActivity('🔐 অ্যাপে লগইন করেছে (+🪙0)');
+    
+    document.getElementById('loginInput').value = ''; 
+    document.getElementById('loginPassword').value = '';
     checkLoginStatus();
   }
 
-  async function checkLoginStatus() {
-    const fbKey = localStorage.getItem('firebase_current_user');
-    if(fbKey) {
-      await fetchConfig();
-      const usersObj = await fetchAllUsers();
-      const user = usersObj[fbKey];
+  function checkLoginStatus() {
+    const userId = localStorage.getItem('app_current_user');
+    if(userId) {
+      const data = getMasterData();
+      const user = data.users.find(u => u.id == userId);
       if(user) {
-        if(user.isBlocked) { logout(); return; }
-        currentUserKey = fbKey;
+        loadRatesFromConfig();
         document.getElementById('authScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        updateUI(user);
+        updateUI();
         initBannerSlider();
         return;
       }
@@ -479,199 +616,864 @@
     document.getElementById('mainApp').style.display = 'none';
   }
 
-  function updateUI(user) {
-    const coins = user.balance || 0;
-    const cpTk = cachedConfig.coinSystem?.coinsPerTk || 100;
-    
-    document.getElementById('coinDisplay').innerText = Math.floor(coins);
-    document.getElementById('tkDisplay').innerText = (coins / cpTk).toFixed(2);
-    document.getElementById('headerName').innerText = user.name;
-    document.getElementById('headerPhone').innerText = user.phone;
-
-    document.getElementById('profileName').value = user.name;
-    document.getElementById('profilePhone').value = user.phone;
-    document.getElementById('profileEmail').value = user.email || '';
-
-    document.getElementById('spinStatus').innerText = Math.max(0, cachedConfig.limitSpin - (user.spinUsed || 0)) + ' left today';
-    document.getElementById('scratchStatus').innerText = Math.max(0, cachedConfig.limitScratch - (user.scratchUsed || 0)) + ' left today';
-    document.getElementById('quizStatus').innerText = Math.max(0, cachedConfig.limitQuiz - (user.quizUsed || 0)) + ' left today';
-    document.getElementById('captchaStatus').innerText = Math.max(0, cachedConfig.limitCaptcha - (user.captchaUsed || 0)) + ' left today';
-    document.getElementById('dailyClaimStatus').innerText = user.lastClaimDate === new Date().toDateString() ? 'Claimed ✓' : 'Available';
-
-    document.getElementById('totalRefer').innerText = user.totalRef || 0;
-    document.getElementById('referIncome').innerText = user.refIncome || 0;
-    document.getElementById('referStatus').innerText = (user.totalRef || 0) + ' refer';
-
-    if(user.notifications && user.notifications.length > 0) document.getElementById('notifBadge').style.display = 'block';
-    else document.getElementById('notifBadge').style.display = 'none';
-
-    const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-    document.getElementById('referLink').value = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
-
-    renderHistory(user);
-    renderLeaderboard();
+  let currentUser = null;
+  function formatDate(dateStr) {
+    if(!dateStr) return 'N/A';
+    const parts = dateStr.split('/');
+    if(parts.length === 3) { if(parseInt(parts[0]) > 12) return dateStr; return `${parts[1]}/${parts[0]}/${parts[2]}`; }
+    return dateStr;
   }
 
-  async function updateUserInFB(updatedData) {
-    if(!currentUserKey) return;
-    await window.fbUpdate(window.fbRef(window.fbDB, 'users/' + currentUserKey), updatedData);
-    const usersObj = await fetchAllUsers();
-    updateUI(usersObj[currentUserKey]);
+  function getCurrentUser() {
+    const data = getMasterData();
+    const userId = localStorage.getItem('app_current_user');
+    if(userId) currentUser = data.users.find(u => u.id == userId);
+    return currentUser;
+  }
+
+  // --- FIREBASE MASTER DATA SYNC ---
+  function getMasterData() {
+    let localData = JSON.parse(localStorage.getItem('app_master_db'));
+    
+    db.ref('master_db').once('value').then((snapshot) => {
+      const remoteData = snapshot.val();
+      if(remoteData) {
+        if(!localData || JSON.stringify(localData) !== JSON.stringify(remoteData)) {
+          localStorage.setItem('app_master_db', JSON.stringify(remoteData));
+          if(typeof updateUI === 'function' && localStorage.getItem('app_current_user')) {
+            updateUI();
+          }
+        }
+      } else if(localData) {
+        db.ref('master_db').set(localData);
+      }
+    });
+
+    if(!localData || !localData.users) { 
+      localData = { users: [], config: {}, banners: [], activityLogs: [] }; 
+      localStorage.setItem('app_master_db', JSON.stringify(localData)); 
+    }
+    if(!localData.config) localData.config = {};
+    if(!localData.config.fraud) localData.config.fraud = { forceAd: true, vpnBlock: false, multiAccountBlock: true, deviceBlock: true, ipBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 };
+    if(!localData.config.coinSystem) localData.config.coinSystem = { coinsPerTk: 100, tkPerCoinsBlock: 1 };
+    
+    return localData;
+  }
+
+  function saveMasterData(data) { 
+    localStorage.setItem('app_master_db', JSON.stringify(data));
+    db.ref('master_db').set(data).catch((error) => {
+      console.error("Firebase Sync Error: ", error);
+    });
+  }
+
+  function logUserActivity(actionName) {
+    const data = getMasterData();
+    const userId = localStorage.getItem('app_current_user');
+    if (!userId) return;
+    
+    const user = data.users.find(u => u.id == userId);
+    if (!user) return;
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    
+    const timeStr = `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+
+    data.activityLogs.unshift({
+      userId: user.id,
+      userName: user.name,
+      phone: user.phone,
+      action: actionName,
+      time: timeStr,
+      currentBalance: (user.balance || 0).toFixed(0),
+      timestamp: Date.now()
+    });
+
+    if (data.activityLogs.length > 100) {
+      data.activityLogs = data.activityLogs.slice(0, 100);
+    }
+
+    saveMasterData(data);
+  }
+
+  function updateUI() {
+    if(isTyping) return;
+    const u = getCurrentUser();
+    if(!u) { checkLoginStatus(); return; }
+    const data = getMasterData();
+    const c = data.config;
+
+    loadRatesFromConfig();
+
+    if(u.isBlocked) {
+      localStorage.removeItem('app_current_user');
+      document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f0f2f5; color:#333;"><h1>🚫 Account Blocked</h1><p>Please contact support.</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#ef4444;color:white;border:none;border-radius:5px;cursor:pointer;">Back to Login</button></div>';
+      return;
+    }
+
+    if(u.notifications && u.notifications.length > 0) document.getElementById('notifBadge').style.display = 'block';
+    else document.getElementById('notifBadge').style.display = 'none';
+
+    const coins = u.balance || 0;
+    document.getElementById('coinDisplay').innerText = Math.floor(coins);
+    document.getElementById('tkDisplay').innerText = coinsToTk(coins).toFixed(2);
+    document.getElementById('headerName').innerText = u.name;
+    document.getElementById('headerPhone').innerText = u.phone;
+    
+    document.getElementById('profileName').value = u.name;
+    document.getElementById('profilePhone').value = u.phone;
+    document.getElementById('profileEmail').value = u.email || '';
+    
+    document.getElementById('joinDateBadge').innerText = '📅 Join Date: ' + formatDate(u.joinDate);
+
+    document.getElementById('spinLeft').innerText = Math.max(0, c.limitSpin - (u.spinUsed || 0));
+    document.getElementById('scratchLeft').innerText = Math.max(0, c.limitScratch - (u.scratchUsed || 0));
+    document.getElementById('quizLeft').innerText = Math.max(0, c.limitQuiz - (u.quizUsed || 0));
+    document.getElementById('captchaLeft').innerText = Math.max(0, c.limitCaptcha - (u.captchaUsed || 0));
+
+    document.getElementById('wheelStatus').innerText = Math.max(0, c.limitSpin - (u.spinUsed || 0)) + ' left today';
+    document.getElementById('scratchStatus').innerText = Math.max(0, c.limitScratch - (u.scratchUsed || 0)) + ' left today';
+    document.getElementById('quizStatus').innerText = Math.max(0, c.limitQuiz - (u.quizUsed || 0)) + ' left today';
+    document.getElementById('captchaStatus').innerText = Math.max(0, c.limitCaptcha - (u.captchaUsed || 0)) + ' left today';
+    
+    document.getElementById('visitStatus').innerText = Math.max(0, c.limitVisit - (u.visitUsed || []).length) + ' links · 1 min';
+    document.getElementById('videoStatus').innerText = Math.max(0, c.limitVideo - (u.videoUsed || []).length) + ' links · 1 min';
+
+    document.getElementById('totalRefer').innerText = u.totalRef || 0;
+    document.getElementById('referIncome').innerText = u.refIncome || 0;
+    document.getElementById('referStatus').innerText = (u.totalRef || 0) + ' refer';
+    document.getElementById('dailyClaimStatus').innerText = u.lastClaimDate === new Date().toDateString() ? 'Claimed ✓' : 'Available';
+    
+    document.getElementById('dailyRewardText').innerText = c.dailyClaim;
+    document.getElementById('refRewardText').innerText = c.refBonus;
+
+    document.getElementById('withdrawCoinBalance').innerText = Math.floor(coins);
+    document.getElementById('withdrawTkBalance').innerText = coinsToTk(coins).toFixed(2);
+    document.getElementById('rateDisplayText').innerText = getRateText();
+
+    if(u.photo) { document.getElementById('headerAvatar').src = u.photo; document.getElementById('profileImg').src = u.photo; }
+
+    renderHistory();
+    renderLeaderboard();
+    renderVisitList();
+    renderVideoList();
+    generateReferLink(u);
+    renderWithdrawMethods();
+  }
+
+  function generateReferLink(user) {
+    if(!user) return;
+    
+    if(!user.myReferCode) {
+      user.myReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
+      const data = getMasterData();
+      const targetUser = data.users.find(u => u.id === user.id);
+      if(targetUser) {
+        targetUser.myReferCode = user.myReferCode;
+        saveMasterData(data);
+      }
+    }
+
+    const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+    const refLink = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
+    const input = document.getElementById('referLink');
+    if(input) input.value = refLink;
+  }
+
+  function autoFillReferCode() {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if(refCode) {
+      const refInput = document.getElementById('regReferCode');
+      if(refInput) {
+        refInput.value = decodeURIComponent(refCode);
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+        const banner = document.getElementById('refBanner');
+        if(banner) banner.style.display = 'block';
+        setTimeout(() => showToast('🎁 রেফারেল কোড অটো-অ্যাপ্লাই হয়েছে!'), 500);
+      }
+    }
+  }
+
+  window.addEventListener('focus', () => { if(!isTyping && localStorage.getItem('app_current_user')) { updateUI(); initBannerSlider(); } });
+  document.addEventListener('visibilitychange', () => { if(!document.hidden && !isTyping && localStorage.getItem('app_current_user')) { setTimeout(() => { if(!isTyping) { updateUI(); initBannerSlider(); } }, 300); } });
+  window.addEventListener('storage', (e) => { if(e.key === 'app_master_db' && !isTyping) { setTimeout(() => { updateUI(); initBannerSlider(); }, 100); } });
+
+  function openNotifModal() {
+    const u = getCurrentUser(); if(!u) return;
+    const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const list = document.getElementById('notifList');
+    if(!user.notifications || user.notifications.length === 0) list.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">কোনো নোটিফিকেশন নেই</p>';
+    else {
+      list.innerHTML = user.notifications.map(n => `<div class="notif-item">${n.msg}<span class="time">🕒 ${n.date}</span></div>`).join('');
+      user.notifications = []; saveMasterData(data); document.getElementById('notifBadge').style.display = 'none';
+    }
+    openModal('notifModal');
   }
 
   function logout() {
-    localStorage.removeItem('firebase_current_user');
-    showToast('✅ লগআউট সফল হয়েছে!');
+    if(!confirm('Are you sure you want to logout?')) return;
+    localStorage.removeItem('app_current_user'); showToast('✅ Logged out successfully!');
     setTimeout(() => location.reload(), 1000);
   }
 
-  function openModal(id) { document.getElementById(id).classList.add('active'); if(id === 'quizModal') loadQuizQuestions(); if(id === 'captchaModal') loadCaptchaQuestions(); }
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  let toastTimeout = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function checkSpamTimer() {
+    const data = getMasterData();
+    const user = getCurrentUser();
+    const spamTimer = data.config.fraud?.spamTimer || 0;
+    if (spamTimer <= 0) return true;
+    
+    const now = Date.now();
+    const lastTime = user.lastActionTime || 0;
+    const timeDiff = now - lastTime;
+    const requiredTime = spamTimer * 1000;
+    
+    if (lastTime > 0 && timeDiff < requiredTime) {
+      const remaining = Math.ceil((requiredTime - timeDiff) / 1000);
+      showToast(`⏳ অপেক্ষা করুন! পরের টাস্ক করতে আরও ${remaining} সেকেন্ড বাকি।`);
+      return false;
+    }
+    return true;
+  }
+
+  function updateLastActionTime() {
+    const data = getMasterData();
+    const user = data.users.find(u => u.id == localStorage.getItem('app_current_user'));
+    if (user) {
+      user.lastActionTime = Date.now();
+      saveMasterData(data);
+    }
+  }
+
+  function checkVPNWarning() {
+    const data = getMasterData();
+    if(data.config.fraud?.vpnBlock === true) {
+      if(Math.random() < 0.3) {
+        showToast('⚠️ ভিপিএন ব্যবহার করা নিষেধ! আপনার অ্যাকাউন্ট ব্লক হতে পারে।');
+      }
+    }
+  }
+
+  function openModal(id) {
+    updateUI();
+    if (['wheelModal', 'scratchModal', 'quizModal', 'captchaModal', 'visitModal', 'videoModal'].includes(id)) {
+      if (!checkSpamTimer()) return;
+      checkVPNWarning();
+    }
+
+    document.getElementById(id).classList.add('active');
+    if (id === 'wheelModal') resetWheel();
+    if (id === 'dailyClaimModal') playAd('claim');
+    if (id === 'scratchModal') resetScratch();
+    if (id === 'quizModal') { 
+      document.getElementById('quizAdSection').style.display='none'; 
+      document.getElementById('quizContent').style.display='block'; 
+      loadQuizQuestions(); 
+    }
+    if (id === 'captchaModal') { 
+      document.getElementById('captchaAdSection').style.display='none'; 
+      document.getElementById('captchaContent').style.display='block'; 
+      loadCaptchaQuestions(); 
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    if (id === 'dailyClaimModal') stopAd('claim');
+    if (id === 'wheelModal') stopAd('spin');
+    if (id === 'scratchModal') stopAd('scratch');
+    if (id === 'quizModal') stopAd('quiz');
+    if (id === 'captchaModal') stopAd('captcha');
+  }
+  
   function showHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-  async function claimDaily() {
-    const usersObj = await fetchAllUsers();
-    const user = usersObj[currentUserKey];
-    if(user.lastClaimDate === new Date().toDateString()) return showToast('Already claimed today!');
+  function resetWheel() {
+    const wheel = document.getElementById('wheel'); if(wheel) wheel.style.transform = 'rotate(0deg)';
+    document.getElementById('spinResult').textContent = ''; document.getElementById('spinBtn').disabled = false;
+    document.getElementById('spinBtn').textContent = 'Spin Now'; document.getElementById('spinAdSection').style.display = 'none';
+  }
+
+  function resetScratch() {
+    const box = document.getElementById('scratchBox'); if(box) { box.classList.remove('revealed'); box.textContent = 'Tap to Scratch'; }
+    document.getElementById('scratchAdSection').style.display = 'none';
+  }
+
+  let adTimers = { claim: null, spin: null, scratch: null, quiz: null, captcha: null };
+  let adStatus = { claim: false, spin: false, scratch: false };
+
+  function playAd(type) {
+    if(type === 'claim' && getCurrentUser().lastClaimDate === new Date().toDateString()) return;
+
+    const c = getMasterData().config;
+    const isForceAdEnabled = c.fraud?.forceAd === true;
     
-    user.balance = (user.balance || 0) + cachedConfig.dailyClaim;
-    user.lastClaimDate = new Date().toDateString();
-    await updateUserInFB(user);
-    showToast(`🎉 ${cachedConfig.dailyClaim} Coins Claimed!`);
-    closeModal('dailyClaimModal');
-  }
+    if(!isForceAdEnabled) {
+      const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+      
+      if(type === 'claim') { 
+        user.balance = (user.balance || 0) + data.config.dailyClaim; 
+        user.lastClaimDate = new Date().toDateString();
+        saveMasterData(data); updateUI(); showToast(`🎉 🪙 ${data.config.dailyClaim} Coins Claimed!`); closeModal('dailyClaimModal');
+        logUserActivity(`🎁 ডেইলি ক্লেইম করেছে (+🪙${data.config.dailyClaim})`); updateLastActionTime();
+      }
+      if(type === 'spin') executeSpin();
+      if(type === 'scratch') executeScratch();
+      if(type === 'quiz') { 
+        user.quizUsed = (user.quizUsed || 0) + 1; 
+        user.balance = (user.balance || 0) + data.config.quizReward;
+        saveMasterData(data); updateUI(); showToast(`✅ সঠিক! +🪙${data.config.quizReward} Coins`);
+        logUserActivity(`🧮 ম্যাথ কুইজ খেলেছে (+🪙${data.config.quizReward})`); updateLastActionTime();
+        
+        if((user.quizUsed || 0) < data.config.limitQuiz) {
+          document.getElementById('quizContent').style.display = 'block'; loadQuizQuestions();
+        } else {
+          document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
+          document.getElementById('quizOptions').innerHTML = '';
+          document.getElementById('quizVerifyBtn').style.display = 'none';
+        }
+      }
+      if(type === 'captcha') { 
+        user.captchaUsed = (user.captchaUsed || 0) + 1; 
+        user.balance = (user.balance || 0) + data.config.captchaReward;
+        saveMasterData(data); updateUI(); showToast(`✅ Verified! +🪙${data.config.captchaReward} Coins`);
+        logUserActivity(`🔐 ক্যাপচা সলভ করেছে (+🪙${data.config.captchaReward})`); updateLastActionTime();
+        
+        if((user.captchaUsed || 0) < data.config.limitCaptcha) {
+          document.getElementById('captchaContent').style.display = 'block'; loadCaptchaQuestions();
+        } else {
+          document.getElementById('captchaBox').textContent = 'DONE';
+          document.getElementById('captchaInput').disabled = true;
+        }
+      }
+      return;
+    }
 
-  async function requestSpin() {
-    const usersObj = await fetchAllUsers();
-    const user = usersObj[currentUserKey];
-    if((user.spinUsed || 0) >= cachedConfig.limitSpin) return showToast('No spins left today!');
-
-    const rewards = [2, 5, 1, 10, 3, 2, 1, 15];
-    const reward = rewards[Math.floor(Math.random() * rewards.length)];
+    const section = document.getElementById(type + 'AdSection');
+    const iframe = document.getElementById(type + 'AdIframe');
+    const timerBadge = document.getElementById(type + 'AdTimer');
     
-    user.spinUsed = (user.spinUsed || 0) + 1;
-    user.balance = (user.balance || 0) + reward;
-    await updateUserInFB(user);
-    showToast(`Won 🪙${reward} Coins!`);
+    if(!section || !iframe || !timerBadge) return;
+
+    section.style.display = 'block';
+    const joiner = c.adUrl.includes('?') ? '&' : '?';
+    iframe.src = c.adUrl + joiner + 'autoplay=1&mute=1';
+    
+    let timeLeft = c.adDuration || 15; 
+    timerBadge.textContent = timeLeft + 's'; 
+    adStatus[type] = false;
+    
+    if(type === 'claim') document.getElementById('claimBtn').disabled = true;
+    if(type === 'spin') { document.getElementById('spinBtn').disabled = true; document.getElementById('spinBtn').textContent = 'অ্যাড চলছে...'; }
+    if(type === 'scratch') document.getElementById('scratchBox').textContent = 'অ্যাড চলছে...';
+    
+    if (adTimers[type]) clearInterval(adTimers[type]);
+    adTimers[type] = setInterval(() => {
+      timeLeft--; timerBadge.textContent = timeLeft + 's';
+      
+      if (section.style.display === 'none' && timeLeft > 0) {
+        clearInterval(adTimers[type]);
+        return;
+      }
+
+      if (timeLeft <= 0) {
+        clearInterval(adTimers[type]); timerBadge.textContent = 'অ্যাড শেষ!'; adStatus[type] = true; section.style.display = 'none';
+        
+        const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+
+        if(type === 'claim') { 
+          document.getElementById('claimBtn').disabled = false;
+          user.balance = (user.balance || 0) + data.config.dailyClaim; 
+          user.lastClaimDate = new Date().toDateString();
+          saveMasterData(data); updateUI(); showToast(`🎉 🪙 ${data.config.dailyClaim} Coins Claimed!`); closeModal('dailyClaimModal');
+          logUserActivity(`🎁 ডেইলি ক্লেইম করেছে (+🪙${data.config.dailyClaim})`); updateLastActionTime();
+        }
+        if(type === 'spin') executeSpin();
+        if(type === 'scratch') executeScratch();
+        
+        if(type === 'quiz') { 
+          user.quizUsed = (user.quizUsed || 0) + 1; 
+          user.balance = (user.balance || 0) + data.config.quizReward;
+          saveMasterData(data); updateUI();
+          showToast(`✅ সঠিক! +🪙${data.config.quizReward} Coins`);
+          logUserActivity(`🧮 ম্যাথ কুইজ খেলেছে (+🪙${data.config.quizReward})`); updateLastActionTime();
+          
+          if((user.quizUsed || 0) < data.config.limitQuiz) {
+            document.getElementById('quizContent').style.display = 'block';
+            loadQuizQuestions();
+          } else {
+            document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
+            document.getElementById('quizOptions').innerHTML = '';
+            document.getElementById('quizVerifyBtn').style.display = 'none';
+          }
+        }
+        
+        if(type === 'captcha') { 
+          user.captchaUsed = (user.captchaUsed || 0) + 1; 
+          user.balance = (user.balance || 0) + data.config.captchaReward;
+          saveMasterData(data); updateUI();
+          showToast(`✅ Verified! +🪙${data.config.captchaReward} Coins`);
+          logUserActivity(`🔐 ক্যাপচা সলভ করেছে (+🪙${data.config.captchaReward})`); updateLastActionTime();
+          
+          if((user.captchaUsed || 0) < data.config.limitCaptcha) {
+            document.getElementById('captchaContent').style.display = 'block';
+            loadCaptchaQuestions();
+          } else {
+            document.getElementById('captchaBox').textContent = 'DONE';
+            document.getElementById('captchaInput').disabled = true;
+          }
+        }
+      }
+    }, 1000);
   }
 
-  async function requestScratch() {
-    const usersObj = await fetchAllUsers();
-    const user = usersObj[currentUserKey];
-    if((user.scratchUsed || 0) >= cachedConfig.limitScratch) return showToast('Limit reached!');
-
-    const reward = Math.floor(Math.random() * 10) + 1;
-    user.scratchUsed = (user.scratchUsed || 0) + 1;
-    user.balance = (user.balance || 0) + reward;
-    await updateUserInFB(user);
-    showToast(`Scratched 🪙${reward} Coins!`);
+  function stopAd(type) {
+    if(adTimers[type]) clearInterval(adTimers[type]);
+    const iframe = document.getElementById(type + 'AdIframe'); if(iframe) iframe.src = '';
+    adStatus[type] = false;
   }
 
-  let currentQuizAns = 0;
+  function claimDaily() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    if(user.lastClaimDate === new Date().toDateString()) return showToast('Already claimed!');
+    playAd('claim');
+  }
+
+  function requestSpin() {
+    const u = getCurrentUser(); if((u.spinUsed || 0) >= getMasterData().config.limitSpin) return showToast('No spins left!');
+    playAd('spin');
+  }
+
+  function executeSpin() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const rewards = [2, 5, 1, 10, 3, 2, 1, data.config.spinMax]; const idx = Math.floor(Math.random() * rewards.length); const reward = rewards[idx];
+    const wheel = document.getElementById('wheel'); wheel.style.transform = `rotate(${360*5 + (360 - idx*45 - 22.5)}deg)`;
+    setTimeout(() => {
+      user.spinUsed = (user.spinUsed || 0) + 1; user.balance = (user.balance || 0) + reward;
+      saveMasterData(data); updateUI(); document.getElementById('spinResult').textContent = `🎉 Won 🪙 ${reward} Coins!`;
+      document.getElementById('spinBtn').disabled = false; document.getElementById('spinBtn').textContent = 'Spin Now'; showToast(`Won 🪙${reward} Coins`);
+      logUserActivity(`🎡 লাকি স্পিন করেছে (+🪙${reward})`);
+      updateLastActionTime();
+    }, 4200);
+  }
+
+  function requestScratch() {
+    const u = getCurrentUser(); 
+    if((u.scratchUsed || 0) >= getMasterData().config.limitScratch) {
+       document.getElementById('scratchBox').textContent = 'Limit Reached';
+       return showToast('❌ আপনার আজকের স্ক্র্যাচ কার্ড লিমিট শেষ হয়ে গেছে!');
+    }
+    playAd('scratch');
+  }
+
+  function executeScratch() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const reward = Math.floor(Math.random() * data.config.scratchMax) + 1;
+    const box = document.getElementById('scratchBox'); box.classList.add('revealed'); box.textContent = '🪙 ' + reward;
+    user.scratchUsed = (user.scratchUsed || 0) + 1; user.balance = (user.balance || 0) + reward;
+    saveMasterData(data); updateUI(); showToast(`Scratched 🪙${reward} Coins!`);
+    setTimeout(() => { box.classList.remove('revealed'); box.textContent = 'Tap to Scratch'; }, 1500);
+    logUserActivity(`🎫 স্ক্র্যাচ কার্ড খেলেছে (+🪙${reward})`);
+    updateLastActionTime();
+  }
+
+  let currentQuiz = null;
   function loadQuizQuestions() {
-    const a = Math.floor(Math.random() * 10) + 1;
-    const b = Math.floor(Math.random() * 10) + 1;
-    currentQuizAns = a + b;
-    document.getElementById('quizQuestion').textContent = `${a} + ${b} = ?`;
-    const opts = [currentQuizAns, currentQuizAns + 2, currentQuizAns - 1].sort(() => Math.random() - 0.5);
-    document.getElementById('quizOptions').innerHTML = opts.map(o => `<div class="quiz-opt" onclick="verifyQuiz(${o})">${o}</div>`).join('');
-  }
-
-  async function verifyQuiz(val) {
-    if(val === currentQuizAns) {
-      const usersObj = await fetchAllUsers();
-      const user = usersObj[currentUserKey];
-      user.quizUsed = (user.quizUsed || 0) + 1;
-      user.balance = (user.balance || 0) + 2;
-      await updateUserInFB(user);
-      showToast('✅ Correct! +2 Coins');
-      closeModal('quizModal');
-    } else {
-      showToast('❌ Wrong Answer!');
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    if((user.quizUsed || 0) >= data.config.limitQuiz) { 
+      document.getElementById('quizQuestion').textContent = 'No quizzes left today!'; 
+      document.getElementById('quizOptions').innerHTML = ''; 
+      document.getElementById('quizVerifyBtn').style.display = 'none';
+      return; 
     }
-  }
-
-  function loadCaptchaQuestions() {
-    document.getElementById('captchaBox').textContent = Math.floor(1000 + Math.random() * 9000);
-  }
-
-  async function verifyCaptcha() {
-    const input = document.getElementById('captchaInput').value.trim();
-    if(input === document.getElementById('captchaBox').textContent) {
-      const usersObj = await fetchAllUsers();
-      const user = usersObj[currentUserKey];
-      user.captchaUsed = (user.captchaUsed || 0) + 1;
-      user.balance = (user.balance || 0) + 1;
-      await updateUserInFB(user);
-      showToast('✅ Verified! +1 Coin');
-      closeModal('captchaModal');
-    } else {
-      showToast('❌ Wrong Captcha!');
-    }
-  }
-
-  async function submitWithdraw() {
-    const num = document.getElementById('withdrawNumber').value.trim();
-    const amount = parseFloat(document.getElementById('withdrawAmount').value);
-    if(!num || !amount) return showToast('সব তথ্য দিন!');
-
-    const usersObj = await fetchAllUsers();
-    const user = usersObj[currentUserKey];
-    if(amount > (user.balance || 0)) return showToast('অপর্যাপ্ত ব্যালেন্স!');
-
-    user.balance -= amount;
-    user.withdrawHistory = user.withdrawHistory || [];
-    user.withdrawHistory.unshift({ method: 'Mobile Recharge / Bkash', amount, number: num, status: 'pending', date: new Date().toLocaleString() });
     
-    await updateUserInFB(user);
-    showToast('✅ উইথড্র রিকোয়েস্ট জমা হয়েছে!');
-    document.getElementById('withdrawNumber').value = '';
-    document.getElementById('withdrawAmount').value = '';
+    const a = Math.floor(Math.random() * 20) + 1; 
+    const b = Math.floor(Math.random() * 20) + 1; 
+    const op = ['+', '-', '*'][Math.floor(Math.random() * 3)];
+    const ans = op === '+' ? a + b : op === '-' ? a - b : a * b; 
+    currentQuiz = { ans, selectedAnswer: null };
+    
+    document.getElementById('quizQuestion').textContent = `${a} ${op} ${b} = ?`;
+    const opts = [ans, ans + 1, ans - 1, ans + 2].sort(() => Math.random() - 0.5);
+    
+    document.getElementById('quizOptions').innerHTML = opts.map(o => 
+      `<div class="quiz-opt" data-val="${o}" onclick="selectQuizOption(this, ${o})">${o}</div>`
+    ).join('');
+    
+    document.getElementById('quizVerifyBtn').style.display = 'none';
   }
 
-  function renderHistory(user) {
-    const el = document.getElementById('withdrawHistory');
-    if(!user.withdrawHistory || user.withdrawHistory.length === 0) { el.innerHTML = '<p style="color:#888;">কোনো হিস্ট্রি নেই</p>'; return; }
-    el.innerHTML = user.withdrawHistory.map(h => `<div class="history-item"><div style="display:flex;justify-content:space-between;"><strong>${h.method}</strong><span>🪙 ${h.amount}</span></div><div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="font-size:11px;color:#888;">${h.date}</span><span class="status ${h.status}">${h.status}</span></div></div>`).join('');
+  function selectQuizOption(el, val) {
+    document.querySelectorAll('#quizOptions .quiz-opt').forEach(o => {
+      o.classList.remove('correct', 'wrong');
+      o.style.border = '2px solid transparent';
+    });
+    
+    el.style.border = '2px solid #667eea';
+    currentQuiz.selectedAnswer = val;
+    document.getElementById('quizVerifyBtn').style.display = 'block';
   }
 
-  async function renderLeaderboard() {
-    const usersObj = await fetchAllUsers();
-    const list = Object.values(usersObj).map(u => ({ name: u.name, amount: u.balance || 0 })).sort((a,b) => b.amount - a.amount).slice(0, 10);
-    document.getElementById('leaderboardList').innerHTML = list.map((l, i) => `<div class="lb-item"><div class="lb-rank">#${i+1}</div><div class="lb-info"><h4>${l.name}</h4></div><div class="lb-amount">🪙 ${Math.floor(l.amount)}</div></div>`).join('');
+  function verifyQuizAnswer() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    
+    if((user.quizUsed || 0) >= data.config.limitQuiz) {
+      document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
+      document.getElementById('quizOptions').innerHTML = '';
+      document.getElementById('quizVerifyBtn').style.display = 'none';
+      return showToast('❌ আপনার আজকের কুইজ লিমিট শেষ হয়ে গেছে!');
+    }
+    
+    if(currentQuiz.selectedAnswer === null) {
+      return showToast('❌ অনুগ্রহ করে একটি উত্তর সিলেক্ট করুন!');
+    }
+    
+    if(currentQuiz.selectedAnswer === currentQuiz.ans) {
+      document.getElementById('quizContent').style.display = 'none'; 
+      playAd('quiz'); 
+    } else {
+      showToast('❌ ভুল উত্তর! আবার চেষ্টা করুন।');
+      setTimeout(() => {
+        if((user.quizUsed || 0) < data.config.limitQuiz) {
+          loadQuizQuestions();
+        } else { 
+          document.getElementById('quizQuestion').textContent = 'No quizzes left today!'; 
+          document.getElementById('quizOptions').innerHTML = ''; 
+          document.getElementById('quizVerifyBtn').style.display = 'none';
+        }
+      }, 1000);
+    }
+  }
+
+  let currentCaptcha = '';
+  function loadCaptchaQuestions() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    if((user.captchaUsed || 0) >= data.config.limitCaptcha) { 
+      document.getElementById('captchaBox').textContent = 'DONE'; 
+      document.getElementById('captchaInput').disabled = true; 
+      return; 
+    }
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    currentCaptcha = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    document.getElementById('captchaBox').textContent = currentCaptcha; 
+    document.getElementById('captchaInput').value = ''; 
+    document.getElementById('captchaInput').disabled = false;
+  }
+
+  function verifyCaptcha() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    
+    if((user.captchaUsed || 0) >= data.config.limitCaptcha) {
+      document.getElementById('captchaBox').textContent = 'DONE';
+      document.getElementById('captchaInput').disabled = true;
+      return showToast('❌ আপনার আজকের ক্যাপচা লিমিট শেষ হয়ে গেছে!');
+    }
+
+    const input = document.getElementById('captchaInput').value.toUpperCase();
+    if(input === currentCaptcha) {
+      document.getElementById('captchaContent').style.display = 'none'; 
+      playAd('captcha'); 
+    } else { 
+      showToast('❌ Wrong Captcha!'); 
+      document.getElementById('captchaInput').value = ''; 
+      loadCaptchaQuestions(); 
+    }
+  }
+
+  const visitLinks = ['https://example.com', 'https://en.m.wikipedia.org/wiki/Web_browser', 'https://en.m.wikipedia.org/wiki/Website', 'https://en.m.wikipedia.org/wiki/Internet', 'https://bn.m.wikipedia.org/wiki/%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A7%87%E0%A6%B6', 'https://en.m.wikipedia.org/wiki/Smartphone', 'https://en.m.wikipedia.org/wiki/Computer', 'https://en.m.wikipedia.org/wiki/Technology', 'https://en.m.wikipedia.org/wiki/Software', 'https://en.m.wikipedia.org/wiki/Application_software'];
+  const videoLinks = ['https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://www.youtube.com/embed/9bZkp7q19f0', 'https://www.youtube.com/embed/kJQP7kiw5Fk', 'https://www.youtube.com/embed/JGwWNGJdvx8', 'https://www.youtube.com/embed/RgKAFK5djSk', 'https://www.youtube.com/embed/OPf0YbXqDm0', 'https://www.youtube.com/embed/fJ9rUzIMcZQ', 'https://www.youtube.com/embed/hT_nvWreIhg', 'https://www.youtube.com/embed/09R8_2nJtjg', 'https://www.youtube.com/embed/CevxZvSJLk8'];
+
+  function renderVisitList() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const list = document.getElementById('visitList'); const limit = data.config.limitVisit;
+    list.innerHTML = visitLinks.slice(0, limit).map((url, i) => {
+      const used = (user.visitUsed || []).includes(i);
+      return `<div class="list-item"><span style="font-size:12px;">${url.replace('https://','').substring(0,25)}...</span><button onclick="startTimer('visit', ${i}, '${url}')" ${used ? 'disabled' : ''}>${used ? 'Done ✓' : 'Visit'}</button></div>`;
+    }).join('');
+  }
+
+  function renderVideoList() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const list = document.getElementById('videoList'); const limit = data.config.limitVideo;
+    list.innerHTML = videoLinks.slice(0, limit).map((url, i) => {
+      const used = (user.videoUsed || []).includes(i);
+      return `<div class="list-item"><span style="font-size:12px;">Video ${i + 1}</span><button onclick="startTimer('video', ${i}, '${url}')" ${used ? 'disabled' : ''}>${used ? 'Done ✓' : 'Watch'}</button></div>`;
+    }).join('');
+  }
+
+  let activeTimer = null;
+  let timerCompleted = false;
+
+  function startTimer(type, idx, url) {
+    if (!checkSpamTimer()) return;
+    
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    timerCompleted = false;
+    
+    openWebView(url, type === 'visit' ? '🌐 Visit Website' : '📺 Watch Video');
+    
+    let timeLeft = 60; 
+    const timerEl = document.getElementById('webViewTimer'); 
+    timerEl.textContent = timeLeft + 's';
+    
+    if(activeTimer) clearInterval(activeTimer);
+    activeTimer = setInterval(() => {
+      timeLeft--; 
+      timerEl.textContent = timeLeft + 's';
+      
+      if(timeLeft <= 0) {
+        clearInterval(activeTimer); 
+        timerCompleted = true;
+        closeWebView(); 
+        
+        if(type === 'visit') { 
+          user.visitUsed = user.visitUsed || []; 
+          user.visitUsed.push(idx); 
+          user.balance = (user.balance || 0) + data.config.visitReward; 
+          showToast(`✅ Visited! +🪙${data.config.visitReward} Coins`); 
+        } else { 
+          user.videoUsed = user.videoUsed || []; 
+          user.videoUsed.push(idx); 
+          user.balance = (user.balance || 0) + data.config.videoReward; 
+          showToast(`✅ Watched! +🪙${data.config.videoReward} Coins`); 
+        }
+        
+        saveMasterData(data); 
+        updateUI();
+        logUserActivity(type === 'visit' ? `🌐 ওয়েবসাইট ভিজিট করেছে (+🪙${data.config.visitReward})` : `📺 ভিডিও দেখেছে (+🪙${data.config.videoReward})`);
+        updateLastActionTime();
+      }
+    }, 1000);
+  }
+
+  function openWebView(url, title) {
+    document.getElementById('webViewTitle').textContent = title; 
+    document.getElementById('webViewIframe').src = url; 
+    document.getElementById('webViewModal').classList.add('active');
+  }
+
+  function closeWebView() {
+    if(activeTimer) clearInterval(activeTimer); 
+    document.getElementById('webViewModal').classList.remove('active'); 
+    document.getElementById('webViewIframe').src = 'about:blank';
+    
+    if(!timerCompleted) {
+      showToast('⚠️ আপনি ৬০ সেকেন্ড শেষ করেননি! কোনো রিওয়ার্ড পাবেন না।');
+    }
+  }
+
+  let selectedMethodData = null;
+  function renderWithdrawMethods() {
+    const data = getMasterData();
+    const methods = data.config.withdrawMethods || [];
+    const container = document.getElementById('withdrawOptions');
+    
+    if(methods.length === 0) { container.innerHTML = '<p style="text-align:center; color:#888;">No withdraw methods available.</p>'; return; }
+
+    container.innerHTML = methods.map((m, i) => {
+      const minCoins = tkToCoins(m.minAmount);
+      return `
+      <div class="withdraw-option" data-index="${i}" onclick="selectWithdrawMethod(this, ${i})">
+        <div class="method-info">
+          ${m.logo ? `<img src="${m.logo}" class="w-logo" alt="${m.name}">` : `<span style="font-size: 22px;">🏦</span>`}
+          ${m.name}
+        </div>
+        <span>Min 🪙 ${minCoins}</span>
+      </div>`;
+    }).join('');
+    
+    selectedMethodData = null;
+  }
+
+  function selectWithdrawMethod(el, index) {
+    document.querySelectorAll('.withdraw-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    const data = getMasterData();
+    selectedMethodData = data.config.withdrawMethods[index];
+  }
+
+  function submitWithdraw() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    if(!selectedMethodData) return showToast('Select method!');
+    const num = document.getElementById('withdrawNumber').value.trim();
+    const coinsAmt = parseFloat(document.getElementById('withdrawAmount').value);
+    
+    if(!num) return showToast('Enter number/address!');
+    if(!coinsAmt || coinsAmt <= 0) return showToast('Enter valid coin amount!');
+    
+    const tkAmt = coinsToTk(coinsAmt);
+    const maxWithdrawTk = data.config.fraud?.maxWithdraw || 0;
+    if(maxWithdrawTk > 0 && tkAmt > maxWithdrawTk) {
+      return showToast(`❌ Max withdraw limit is ৳${maxWithdrawTk} (🪙 ${tkToCoins(maxWithdrawTk)} coins)`);
+    }
+    
+    const minCoinsRequired = tkToCoins(selectedMethodData.minAmount);
+    if(coinsAmt < minCoinsRequired) return showToast(`Min 🪙${minCoinsRequired} (৳${selectedMethodData.minAmount}) required!`);
+    if(coinsAmt > (user.balance || 0)) return showToast('Insufficient coin balance!');
+
+    user.balance = (user.balance || 0) - coinsAmt; 
+    user.withdrawHistory = user.withdrawHistory || [];
+    const now = new Date();
+    const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    
+    user.withdrawHistory.unshift({ 
+      method: selectedMethodData.name, 
+      amount: coinsAmt,
+      tkAmount: tkAmt,
+      number: num, 
+      date: timeStr, 
+      status: 'pending' 
+    });
+    saveMasterData(data); updateUI(); showToast(`✅ Request submitted for 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)})!`);
+    logUserActivity(`💸 উইথড্র রিকোয়েস্ট করেছে (-🪙${coinsAmt} ≈ ৳${tkAmt.toFixed(2)})`);
+    
+    document.getElementById('withdrawNumber').value = ''; document.getElementById('withdrawAmount').value = ''; selectedMethodData = null;
+  }
+
+  function renderHistory() {
+    const u = getCurrentUser(); const el = document.getElementById('withdrawHistory');
+    if(!u.withdrawHistory || !u.withdrawHistory.length) { el.innerHTML = '<p style="color:#888;font-size:12px;">No history</p>'; return; }
+    el.innerHTML = u.withdrawHistory.map(h => {
+      const coinsAmt = h.amount;
+      const tkAmt = h.tkAmount !== undefined ? h.tkAmount : coinsToTk(coinsAmt);
+      return `
+      <div class="history-item">
+        <div style="display:flex;justify-content:space-between;"><strong>${h.method}</strong><span>🪙 ${coinsAmt} (≈৳${tkAmt.toFixed(2)})</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="font-size:11px;color:#888;">${formatDate(h.date)}</span><span class="status ${h.status}">${h.status}</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderLeaderboard() {
+    const u = getCurrentUser(); const data = getMasterData(); const el = document.getElementById('leaderboardList');
+    let lbData = data.users.map(x => ({ name: x.name, amount: x.balance || 0, date: new Date().toLocaleDateString(), photo: x.photo || 'https://ui-avatars.com/api/?name=' + x.name.charAt(0) + '&background=667eea&color=fff', isMe: x.id === u.id }));
+    lbData.sort((a, b) => b.amount - a.amount); document.getElementById('lbDate').textContent = formatDate(new Date().toLocaleDateString());
+    el.innerHTML = lbData.map((d, i) => {
+      const isMe = d.isMe ? 'me' : ''; const badge = d.isMe ? '<span>You</span>' : ''; const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+      return `<div class="lb-item ${isMe}"><div class="lb-rank">${rank}</div><img src="${d.photo}" class="lb-avatar"><div class="lb-info"><h4>${d.name} ${badge}</h4><p>${formatDate(d.date)}</p></div><div class="lb-amount">🪙 ${Math.floor(d.amount)}</div></div>`;
+    }).join('');
+  }
+
+  function saveProfile() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    user.name = document.getElementById('profileName').value.trim() || 'Guest User'; 
+    user.phone = document.getElementById('profilePhone').value.trim() || '+880 1XXXXXXXXX';
+    user.email = document.getElementById('profileEmail').value.trim();
+    saveMasterData(data); updateUI(); showToast('✅ Profile saved!');
+  }
+
+  function changePassword() {
+    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+    const oldPass = document.getElementById('oldPassword').value.trim(); const newPass = document.getElementById('newPassword').value.trim(); const confirmPass = document.getElementById('confirmPassword').value.trim();
+    if(!oldPass || !newPass || !confirmPass) return showToast('সব ঘর পূরণ করুন!');
+    if(oldPass !== user.password) return showToast('পুরনো পাসওয়ার্ড সঠিক নয়!');
+    if(newPass.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!');
+    if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!');
+    user.password = newPass; saveMasterData(data);
+    document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = '';
+    showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!');
+  }
+
+  function uploadPhoto(e) {
+    const file = e.target.files[0]; if(!file) return; if(file.size > 500000) return showToast('❌ ছবি ৫০০KB এর কম হতে হবে!');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
+      user.photo = ev.target.result; saveMasterData(data);
+      document.getElementById('headerAvatar').src = ev.target.result; document.getElementById('profileImg').src = ev.target.result; showToast('✅ Photo updated!');
+    };
+    reader.readAsDataURL(file);
   }
 
   function copyRefer() {
-    const input = document.getElementById('referLink');
-    input.select();
-    navigator.clipboard.writeText(input.value);
-    showToast('✅ রেফার লিংক কপি হয়েছে!');
+    const input = document.getElementById('referLink'); if(!input || !input.value) return showToast('❌ Referral link not ready!');
+    input.select(); input.setSelectionRange(0, 99999);
+    try { navigator.clipboard.writeText(input.value).then(() => showToast('✅ Link copied!')).catch(() => { document.execCommand('copy'); showToast('✅ Link copied!'); }); }
+    catch(e) { document.execCommand('copy'); showToast('✅ Link copied!'); }
   }
+
+  function shareRefer() {
+    const input = document.getElementById('referLink'); if(!input || !input.value) return showToast('❌ Link not ready!');
+    const shareText = `🎁 Earning App-এ যোগ দিন!\nআমার রেফারেল লিংক ব্যবহার করে রেজিস্টার করুন এবং 🪙 ${getMasterData().config.refBonus} কয়েন বোনাস পান!\n\n${input.value}`;
+    if(navigator.share) navigator.share({ title: 'Earning App', text: shareText, url: input.value }).catch(() => {});
+    else { navigator.clipboard.writeText(shareText).then(() => showToast('✅ Share text copied!')).catch(() => showToast('❌ Share not supported!')); }
+  }
+
+  let currentBannerIndex = 0;
+  let bannerSlideInterval = null;
 
   function initBannerSlider() {
+    const data = getMasterData();
+    const banners = data.banners || [];
     const track = document.getElementById('bannerTrack');
-    const dots = document.getElementById('bannerDots');
-    if(!track) return;
-    const banners = [
-      { title: '🎁 রেফার করে কামান', sub: 'বন্ধুকে রেফার করে পান বোনাস!', color1: '#667eea', color2: '#764ba2' },
-      { title: '🎡 লাকি স্পিন', sub: 'প্রতিদিন স্পিন করে কয়েন জিতুন!', color1: '#11998e', color2: '#38ef7d' }
+    const dotsContainer = document.getElementById('bannerDots');
+    if(!track || !dotsContainer) return;
+
+    const finalBanners = banners.length > 0 ? banners : [
+      { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান 🪙50 কয়েন বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
+      { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
+      { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটি ভিডিওতে পান 🪙3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
+      { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
     ];
-    track.innerHTML = banners.map(b => `<div class="banner-slide" style="background:linear-gradient(135deg, ${b.color1}, ${b.color2});"><div class="banner-slide-content"><h3>${b.title}</h3><p>${b.sub}</p></div></div>`).join('');
-    dots.innerHTML = banners.map((_, i) => `<div class="banner-dot ${i === 0 ? 'active' : ''}"></div>`).join('');
+
+    track.innerHTML = finalBanners.map(b => `
+      <div class="banner-slide" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2});">
+        <div class="banner-slide-content"><h3>${b.title}</h3><p>${b.subtitle}</p><button onclick="openModal('${b.action}')">${b.btnText || 'এখনই দেখুন →'}</button></div>
+        <div class="banner-slide-icon">${b.icon}</div>
+      </div>
+    `).join('');
+
+    dotsContainer.innerHTML = finalBanners.map((_, i) => `<div class="banner-dot ${i === 0 ? 'active' : ''}" onclick="goToBanner(${i})"></div>`).join('');
+
+    window.goToBanner = function(index) {
+      currentBannerIndex = index; updateBannerTrack(); restartBannerAutoPlay();
+    };
+
+    function updateBannerTrack() {
+      track.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
+      const dots = dotsContainer.querySelectorAll('.banner-dot');
+      dots.forEach((d, i) => d.classList.toggle('active', i === currentBannerIndex));
+    }
+
+    function nextBanner() { currentBannerIndex = (currentBannerIndex + 1) % finalBanners.length; updateBannerTrack(); }
+    function prevBanner() { currentBannerIndex = (currentBannerIndex - 1 + finalBanners.length) % finalBanners.length; updateBannerTrack(); }
+
+    function restartBannerAutoPlay() {
+      if(bannerSlideInterval) clearInterval(bannerSlideInterval);
+      if(finalBanners.length > 1) bannerSlideInterval = setInterval(nextBanner, 4000);
+    }
+
+    let touchStartX = 0; let touchEndX = 0;
+    track.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; if(bannerSlideInterval) clearInterval(bannerSlideInterval); }, {passive: true});
+    track.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchStartX - touchEndX;
+      if(diff > 40) nextBanner(); else if(diff < -40) prevBanner();
+      restartBannerAutoPlay();
+    }, {passive: true});
+
+    track.style.transform = 'translateX(0%)'; currentBannerIndex = 0; updateBannerTrack(); restartBannerAutoPlay();
   }
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    await fetchConfig();
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
-    if(ref) {
-      document.getElementById('regReferCode').value = decodeURIComponent(ref);
-      document.getElementById('loginForm').style.display = 'none';
-      document.getElementById('registerForm').style.display = 'block';
-      document.getElementById('refBanner').style.display = 'block';
-    }
-    checkLoginStatus();
-  });
+  checkLoginStatus();
+  autoFillReferCode();
 </script>
 </body>
 </html>
