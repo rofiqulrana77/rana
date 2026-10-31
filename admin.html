@@ -255,7 +255,7 @@
 
       <div id="dashboard" class="page active">
         <div class="stats-grid">
-          <div class="stat-card"><h3>Daily Active Users</h3><p id="statActive">0</p></div>
+          <div class="stat-card"><h3>Daily Active Users (Live)</h3><p id="statActive">0</p></div>
           <div class="stat-card"><h3>Total Users</h3><p id="statUsers">0</p></div>
           <div class="stat-card" style="border-left-color: var(--orange);">
             <h3>Total Balance (Coins)</h3>
@@ -446,7 +446,7 @@
           <div class="fraud-row">
             <div class="fraud-info">
               <b>VPN Block (ভিপিএন ব্লক)</b>
-              <small>ইউজাররা ভিপিএন (VPN) ব্যবহার করে অ্যাকাউন্ট খোলা বা টাস্ক করা রোধ করবে।</small>
+              <small>ইউজাররা ভিপিএন (VPN) ব্যবহার করে অ্যাপে প্রবেশ বা কাজ করা থেকে বিরত থাকবে।</small>
             </div>
             <label class="switch"><input type="checkbox" id="fraudVpnBlock"><span class="slider"></span></label>
           </div>
@@ -632,7 +632,7 @@
 <script>
   // Firebase Configuration & Initialization
   const firebaseConfig = {
-    apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
+  apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   authDomain: "rofiqul.firebaseapp.com",
   databaseURL: "https://rofiqul-default-rtdb.firebaseio.com",
   projectId: "rofiqul",
@@ -830,15 +830,14 @@
     const data = getData();
     loadRatesFromConfig();
     
-    let dailyActive = localStorage.getItem('app_daily_active');
-    const today = new Date().toDateString();
-    if(dailyActive) {
-      dailyActive = JSON.parse(dailyActive);
-      if(dailyActive.date !== today) dailyActive = { date: today, count: data.users.length };
-    } else {
-      dailyActive = { date: today, count: data.users.length };
-    }
-    localStorage.setItem('app_daily_active', JSON.stringify(dailyActive));
+    // সঠিক লজিক: ইউজারদের lastActive টাইম চেক করা হবে (গত ৫ মিনিটের মধ্যে যারা অ্যাপে ছিল বা কাজ করেছে)
+    const nowTimestamp = Date.now();
+    const activeThreshold = 5 * 60 * 1000; // ৫ মিনিট
+    
+    const activeUsersCount = data.users.filter(u => {
+      if (!u.lastActive) return false;
+      return (nowTimestamp - u.lastActive) <= activeThreshold;
+    }).length;
 
     let pendingCoins = 0;
     let confirmedCoins = 0;
@@ -873,7 +872,7 @@
     const totalRefer = data.users.reduce((sum, u) => sum + (u.totalRef || 0), 0);
     const referCoins = data.users.reduce((sum, u) => sum + (u.refIncome || 0), 0);
 
-    document.getElementById('statActive').innerText = dailyActive.count;
+    document.getElementById('statActive').innerText = activeUsersCount;
     document.getElementById('statUsers').innerText = data.users.length;
     
     document.getElementById('statBalanceCoins').innerText = '🪙 ' + Math.floor(totalCoins);
@@ -1508,7 +1507,7 @@
     if(newPass.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!', '#ef4444');
     if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!', '#ef4444');
     localStorage.setItem('admin_password', newPass);
-    document.getElementById('oldAdminPass').value = ''; 
+    document.getElementById('oldPass').value = ''; 
     document.getElementById('newPass').value = ''; 
     document.getElementById('confirmAdminPass').value = '';
     showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!', '#10b981');
