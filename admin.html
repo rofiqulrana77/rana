@@ -697,7 +697,6 @@
       COINS_PER_TK = MASTER_CONFIG.coinSystem?.coinsPerTk || 100;
       TK_PER_COIN_BLOCK = MASTER_CONFIG.coinSystem?.tkPerCoinsBlock || 1;
       
-      // সেটিংসে কিছু মিসিং থাকলে ডিফল্ট সেট করে দিবে (update instead of set)
       let needsUpdate = false;
       let updateObj = {};
       if(!MASTER_CONFIG.banners || MASTER_CONFIG.banners.length === 0) { updateObj.banners = DEFAULT_BANNERS; needsUpdate = true; }
@@ -705,7 +704,7 @@
       if(!MASTER_CONFIG.fraud) { updateObj.fraud = DEFAULT_FRAUD; needsUpdate = true; }
       
       if(needsUpdate) {
-        db.collection("settings").doc("config").update(updateObj);
+        db.collection("settings").doc("config").set(updateObj, { merge: true });
       }
       
     } else {
