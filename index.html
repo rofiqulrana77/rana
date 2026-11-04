@@ -63,7 +63,6 @@
     z-index: 2;
     animation: fadeInSub 2s ease-in-out infinite alternate;
   }
-  /* Background Stars */
   .splash-stars {
     position: absolute; inset: 0;
     background-image: 
@@ -592,6 +591,10 @@
   let MASTER_CONFIG = null; 
   let currentUser = null;
 
+  // কনফিগ লোড হওয়ার আগে ডিফল্ট ভ্যালু সেট করা (যাতে লগইন/রেজিষ্ট্রেশন আটকে না থাকে)
+  const DEFAULT_FRAUD = { vpnBlock: false, forceAd: true, deviceBlock: true, ipBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, botDetect: true, botClickInterval: 300 };
+  MASTER_CONFIG = { fraud: DEFAULT_FRAUD, coinSystem: { coinsPerTk: 100, tkPerCoinsBlock: 1 }, cooldownSec: 60 }; 
+
   /* ============================================================
      ✅ 3. VPN / PROXY CHECKER
      ============================================================ */
@@ -742,7 +745,7 @@
   }
 
   async function handleRegister() {
-    if(!MASTER_CONFIG) return showToast('⏳ Loading settings, please wait...');
+    if(!MASTER_CONFIG) MASTER_CONFIG = { fraud: DEFAULT_FRAUD };
 
     if(MASTER_CONFIG.fraud && MASTER_CONFIG.fraud.vpnBlock) {
       showToast('🔍 Checking Network Security...');
@@ -817,7 +820,7 @@
   }
 
   async function handleLogin() {
-    if(!MASTER_CONFIG) return showToast('⏳ Loading settings, please wait...');
+    if(!MASTER_CONFIG) MASTER_CONFIG = { fraud: DEFAULT_FRAUD };
 
     if(MASTER_CONFIG.fraud && MASTER_CONFIG.fraud.vpnBlock) {
       showToast('🔍 Checking Network Security...');
@@ -934,11 +937,11 @@
     const visitRewardText = document.getElementById('visitRewardText');
     if (visitRewardText) visitRewardText.innerText = c.visitReward || 2;
 
-    document.getElementById('refRewardText').innerText = c.refBonus;
+    document.getElementById('refRewardText').innerText = c.refBonus || 50;
     document.getElementById('totalReferModal').innerText = u.totalRef || 0;
     document.getElementById('referIncomeModal').innerText = u.refIncome || 0;
-    document.getElementById('refRewardTextModal').innerText = c.refBonus;
-    document.getElementById('dailyRewardText').innerText = c.dailyClaim;
+    document.getElementById('refRewardTextModal').innerText = c.refBonus || 50;
+    document.getElementById('dailyRewardText').innerText = c.dailyClaim || 5;
     document.getElementById('withdrawCoinBalance').innerText = Math.floor(coins);
     document.getElementById('withdrawTkBalance').innerText = coinsToTk(coins).toFixed(2);
     document.getElementById('rateDisplayText').innerText = getRateText();
@@ -1024,12 +1027,12 @@
       'dailyClaim',
       async () => {
         await saveUserData({
-          balance: firebase.firestore.FieldValue.increment(MASTER_CONFIG.dailyClaim),
+          balance: firebase.firestore.FieldValue.increment(MASTER_CONFIG.dailyClaim || 5),
           lastClaimDate: new Date().toDateString(),
           lastDailyClaimTime: Date.now(),
           lastActionTime: Date.now()
         });
-        showToast(`🎉 🪙 ${MASTER_CONFIG.dailyClaim} Coins Claimed!`);
+        showToast(`🎉 🪙 ${MASTER_CONFIG.dailyClaim || 5} Coins Claimed!`);
         btn.disabled = false;
         btn.innerText = 'Claim Now';
         closeModal('dailyClaimModal');
@@ -1292,7 +1295,7 @@
   function shareRefer() {
     const input = document.getElementById('referLink');
     if(!input || !input.value) return showToast('❌ Link not ready!');
-    const shareText = `🎁 Rocket Earning App-এ যোগ দিন!\nআমার রেফারেল লিংক ব্যবহার করে রেজিস্টার করুন এবং 🪙 ${MASTER_CONFIG.refBonus} কয়েন বোনাস পান!\n\n${input.value}`;
+    const shareText = `🎁 Rocket Earning App-এ যোগ দিন!\nআমার রেফারেল লিংক ব্যবহার করে রেজিস্টার করুন এবং 🪙 ${MASTER_CONFIG.refBonus || 50} কয়েন বোনাস পান!\n\n${input.value}`;
     if(navigator.share) navigator.share({ title: 'Rocket Earning App', text: shareText, url: input.value }).catch(() => {});
     else { navigator.clipboard.writeText(shareText).then(() => showToast('✅ Share text copied!')); }
   }
