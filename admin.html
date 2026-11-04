@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>App Admin Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<!-- ✅ Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
   :root { --primary: #4f46e5; --primary-hover: #4338ca; --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; --orange: #f97316; --purple: #8b5cf6; }
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -21,18 +22,20 @@
   .auth-box input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 16px; }
   .auth-box button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
   
-  #app { display: none; width: 100%; height: 100%; flex-direction: column; }
-  .mobile-topbar { display: none; background: var(--primary); color: white; padding: 15px; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; }
+  #app { display: none; width: 100%; height: 100%; flex-direction: column; overflow: hidden; }
+  .mobile-topbar { display: none; background: var(--primary); color: white; padding: 15px; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; z-index: 1001; }
   .mobile-topbar button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  
   .layout { display: flex; width: 100%; height: 100%; overflow: hidden; }
-  .sidebar { width: 260px; background: #111827; color: white; display: flex; flex-direction: column; overflow-y: auto; transition: 0.3s; z-index: 1000; }
-  .brand { padding: 20px; font-size: 20px; font-weight: bold; border-bottom: 1px solid #374151; text-align: center; background: var(--primary); }
-  .menu { list-style: none; padding: 10px; }
+  .sidebar { width: 260px; background: #111827; color: white; display: flex; flex-direction: column; height: 100%; overflow-y: auto; overflow-x: hidden; transition: 0.3s; z-index: 1000; flex-shrink: 0; -webkit-overflow-scrolling: touch; }
+  .brand { padding: 20px; font-size: 20px; font-weight: bold; border-bottom: 1px solid #374151; text-align: center; background: var(--primary); flex-shrink: 0; }
+  .menu { list-style: none; padding: 10px; flex: 1; }
   .menu li { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
   .menu li:hover, .menu li.active { background: var(--primary); }
   .menu li .icon { font-size: 18px; }
-  .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
-  .topbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+  
+  .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); height: 100%; -webkit-overflow-scrolling: touch; }
+  .topbar { background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; }
   .topbar h2 { font-size: 20px; }
   .btn-back { background: var(--success); color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: bold; }
   .page { padding: 30px; display: none; animation: fadeIn 0.3s; }
@@ -65,6 +68,8 @@
   .status.pending { background: #fef3c7; color: #d97706; }
   .status.confirm { background: #d1fae5; color: #059669; }
   .status.rejected { background: #fee2e2; color: #dc2626; }
+  .status.online { background: #d1fae5; color: #059669; }
+  .status.offline { background: #f3f4f6; color: #6b7280; }
   
   .toast { position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 15px 25px; border-radius: 8px; z-index: 11000; transform: translateX(150%); transition: 0.3s; }
   .toast.show { transform: translateX(0); }
@@ -86,6 +91,8 @@
 
   .user-info-cell { display: flex; align-items: center; gap: 8px; }
   .user-info-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; margin-right: 4px; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
   .banner-preview { padding: 15px; border-radius: 10px; color: white; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
   .banner-preview h4 { font-size: 14px; margin-bottom: 3px; }
@@ -108,87 +115,31 @@
   .rate-info-box h4 { color: #92400e; font-size: 15px; margin-bottom: 5px; }
   .rate-info-box p { color: #78350f; font-size: 13px; font-weight: 600; }
 
-  .coin-rate-editor { 
-    background: linear-gradient(135deg, #eff6ff, #dbeafe); 
-    border: 2px solid var(--primary); 
-    border-radius: 12px; 
-    padding: 15px; 
-    margin-bottom: 20px; 
-  }
-  .coin-rate-editor h4 { 
-    color: var(--primary); 
-    font-size: 15px; 
-    margin-bottom: 5px; 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-  }
-  .coin-rate-editor .desc { 
-    font-size: 12px; 
-    color: #6b7280; 
-    margin-bottom: 15px; 
-    line-height: 1.4;
-  }
-  
-  .coin-rate-editor .rate-inputs { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    gap: 8px; 
-    flex-wrap: nowrap;
-    width: 100%;
-  }
-  .coin-rate-editor .input-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .coin-rate-editor .input-group label {
-    font-size: 11px;
-    color: #4b5563;
-    margin-bottom: 5px;
-    text-align: center;
-    font-weight: 600;
-  }
-  .coin-rate-editor .rate-inputs input { 
-    width: 100%;
-    padding: 12px 8px; 
-    border: 2px solid #93c5fd; 
-    border-radius: 8px; 
-    font-size: 18px; 
-    text-align: center; 
-    font-weight: bold; 
-    color: var(--primary); 
-    box-sizing: border-box;
-  }
-  .coin-rate-editor .equals { 
-    font-size: 20px; 
-    font-weight: bold; 
-    color: var(--primary); 
-    text-align: center;
-    padding-top: 20px;
-  }
-  
-  .coin-rate-editor .preview { 
-    background: white; 
-    padding: 10px; 
-    border-radius: 8px; 
-    text-align: center; 
-    margin-top: 12px; 
-    font-size: 13px; 
-    font-weight: 600; 
-    color: #374151; 
-    border: 1px dashed var(--primary);
-  }
-  .coin-rate-editor .preview b { 
-    color: var(--primary); 
-    font-size: 16px; 
-  }
+  .coin-rate-editor { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 2px solid var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+  .coin-rate-editor h4 { color: var(--primary); font-size: 15px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+  .coin-rate-editor .desc { font-size: 12px; color: #6b7280; margin-bottom: 15px; line-height: 1.4; }
+  .coin-rate-editor .rate-inputs { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; width: 100%; }
+  .coin-rate-editor .input-group { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .coin-rate-editor .input-group label { font-size: 11px; color: #4b5563; margin-bottom: 5px; text-align: center; font-weight: 600; }
+  .coin-rate-editor .rate-inputs input { width: 100%; padding: 12px 8px; border: 2px solid #93c5fd; border-radius: 8px; font-size: 18px; text-align: center; font-weight: bold; color: var(--primary); box-sizing: border-box; }
+  .coin-rate-editor .equals { font-size: 20px; font-weight: bold; color: var(--primary); text-align: center; padding-top: 20px; }
+  .coin-rate-editor .preview { background: white; padding: 10px; border-radius: 8px; text-align: center; margin-top: 12px; font-size: 13px; font-weight: 600; color: #374151; border: 1px dashed var(--primary); }
+  .coin-rate-editor .preview b { color: var(--primary); font-size: 16px; }
+
+  .link-section { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+  .link-section:last-child { border-bottom: none; }
+  .link-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e5e7eb; }
+  .link-list-item .link-info { flex: 1; overflow: hidden; margin-right: 10px; }
+  .link-list-item .link-title { font-weight: bold; font-size: 14px; color: #1f2937; }
+  .link-list-item .link-url { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .ad-config-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+  .ad-config-box h4 { font-size: 14px; color: var(--primary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .ad-network-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--primary); color: white; }
 
   @media (max-width: 768px) {
     .mobile-topbar { display: flex; }
-    .sidebar { position: fixed; left: -260px; height: 100%; }
+    .sidebar { position: fixed; left: -260px; height: 100vh; top: 0; bottom: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     .sidebar.open { left: 0; }
     .overlay.active { display: block; }
     .topbar { display: none; }
@@ -239,8 +190,10 @@
         <li onclick="nav('withdrawals')"><span class="icon">💸</span> Withdrawals</li>
         <li onclick="nav('withdrawMethods')"><span class="icon">🏦</span> Withdraw Methods</li>
         <li onclick="nav('tasks')"><span class="icon">🎯</span> Tasks & Rewards</li>
+        <li onclick="nav('links')"><span class="icon">🔗</span> Manage Links</li>
         <li onclick="nav('coinRate')"><span class="icon">🪙</span> Coin Rate</li>
         <li onclick="nav('banners')"><span class="icon">🖼️</span> Banner Management</li>
+        <li onclick="nav('adNetworks')"><span class="icon">📢</span> Ad Networks</li>
         <li onclick="nav('fraud')"><span class="icon">🛡️</span> Fraud Prevention</li>
         <li onclick="nav('notifications')"><span class="icon">🔔</span> Notifications</li>
         <li onclick="nav('settings')"><span class="icon">⚙️</span> Settings</li>
@@ -255,7 +208,11 @@
 
       <div id="dashboard" class="page active">
         <div class="stats-grid">
-          <div class="stat-card"><h3>Daily Active Users (Live)</h3><p id="statActive">0</p></div>
+          <div class="stat-card" style="border-left-color: var(--success); background: #ecfdf5;">
+            <h3><span class="live-dot"></span> Live Active Users</h3>
+            <p id="statActive" style="color: var(--success);">0</p>
+            <div class="sub-info">Last 2 minutes active</div>
+          </div>
           <div class="stat-card"><h3>Total Users</h3><p id="statUsers">0</p></div>
           <div class="stat-card" style="border-left-color: var(--orange);">
             <h3>Total Balance (Coins)</h3>
@@ -290,22 +247,6 @@
           </div>
         </div>
         <div class="chart-container"><canvas id="myChart"></canvas></div>
-
-        <div class="card" style="margin-top: 20px;">
-          <h3>📋 Live User Activity Log</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">ইউজাররা অ্যাপে কখন কী কাজ করেছে তার লাইভ রেকর্ড।</p>
-          <table id="activityLogTable">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Phone</th>
-                <th>Activity</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
       </div>
 
       <div id="users" class="page">
@@ -326,7 +267,6 @@
       <div id="withdrawals" class="page">
         <div class="card">
           <h3>📜 Withdrawal Requests</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">ইউজার কয়েনে উইথড্র রিকোয়েস্ট করে, এখানে কয়েন ও টাকার সমান দেখানো হয়েছে।</p>
           <div class="form-group">
             <label>Filter by Status</label>
             <select id="filterWithdrawStatus" onchange="loadWithdrawals()">
@@ -346,7 +286,6 @@
       <div id="withdrawMethods" class="page">
         <div class="card">
           <h3>🏦 Manage Withdraw Methods</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে নতুন মেথড অ্যাড, এডিট এবং ডিলিট করতে পারবেন। মিনিমাম অ্যামাউন্ট টাকায় দিতে হবে (৳)।</p>
           <div class="rate-info-box">
             <h4>💡 বর্তমান কনভার্শন রেট</h4>
             <p id="withdrawRateInfo">100 Coins = ৳1</p>
@@ -363,78 +302,127 @@
             <h4>💡 কয়েন সিস্টেম রেট</h4>
             <p id="taskRateInfo">100 Coins = ৳1 | নিচের সব রিওয়ার্ড কয়েনে দেওয়া হবে</p>
           </div>
+          
+          <div class="form-group" style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #f59e0b; margin-bottom:20px;">
+            <label style="color:#b45309; font-size:15px;">⏱️ Task Cooldown Timer (Seconds)</label>
+            <input type="number" id="cfgCooldownSec" value="60" min="0" style="border-color:#f59e0b; font-weight:bold; font-size:16px; color:#b45309;">
+          </div>
+
+          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">🚀 Rocket Tasks (Rewards & Limits)</h4>
+          <div class="grid-2" style="grid-template-columns: repeat(4, 1fr);">
+            <div class="form-group"><label>Rocket 1 Reward</label><input type="number" id="cfgRocket1Reward"></div>
+            <div class="form-group"><label>Rocket 1 Limit</label><input type="number" id="cfgLimitRocket1"></div>
+            <div class="form-group"><label>Rocket 2 Reward</label><input type="number" id="cfgRocket2Reward"></div>
+            <div class="form-group"><label>Rocket 2 Limit</label><input type="number" id="cfgLimitRocket2"></div>
+            
+            <div class="form-group"><label>Rocket 3 Reward</label><input type="number" id="cfgRocket3Reward"></div>
+            <div class="form-group"><label>Rocket 3 Limit</label><input type="number" id="cfgLimitRocket3"></div>
+            <div class="form-group"><label>Rocket 4 Reward</label><input type="number" id="cfgRocket4Reward"></div>
+            <div class="form-group"><label>Rocket 4 Limit</label><input type="number" id="cfgLimitRocket4"></div>
+
+            <div class="form-group"><label>Rocket 5 Reward</label><input type="number" id="cfgRocket5Reward"></div>
+            <div class="form-group"><label>Rocket 5 Limit</label><input type="number" id="cfgLimitRocket5"></div>
+            <div class="form-group"><label>Rocket 6 Reward</label><input type="number" id="cfgRocket6Reward"></div>
+            <div class="form-group"><label>Rocket 6 Limit</label><input type="number" id="cfgLimitRocket6"></div>
+          </div>
+
+          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">🎁 Other Tasks</h4>
           <div class="grid-2">
             <div class="form-group"><label>Daily Claim Reward (Coins 🪙)</label><input type="number" id="cfgDailyClaim"></div>
+            <div class="form-group"><label>Visit Website Reward (Coins 🪙)</label><input type="number" id="cfgVisitReward"></div>
             <div class="form-group"><label>Refer Bonus (Coins 🪙)</label><input type="number" id="cfgRefBonus"></div>
             <div class="form-group"><label>Min Withdraw (৳ Tk)</label><input type="number" id="cfgMinWithdraw"></div>
-            <div class="form-group"><label>Spin Wheel Max Reward (Coins 🪙)</label><input type="number" id="cfgSpinMax"></div>
-            <div class="form-group"><label>Scratch Card Max Reward (Coins 🪙)</label><input type="number" id="cfgScratchMax"></div>
-            <div class="form-group"><label>Quiz Reward (Coins 🪙)</label><input type="number" id="cfgQuizReward"></div>
-            <div class="form-group"><label>Captcha Reward (Coins 🪙)</label><input type="number" id="cfgCaptchaReward"></div>
-            <div class="form-group"><label>Visit Website Reward (Coins 🪙)</label><input type="number" id="cfgVisitReward"></div>
-            <div class="form-group"><label>Watch Video Reward (Coins 🪙)</label><input type="number" id="cfgVideoReward"></div>
-          </div>
-          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">Daily Task Limits</h4>
-          <div class="grid-2">
-            <div class="form-group"><label>Lucky Spin Limit</label><input type="number" id="cfgLimitSpin"></div>
-            <div class="form-group"><label>Scratch Card Limit</label><input type="number" id="cfgLimitScratch"></div>
-            <div class="form-group"><label>Math Quiz Limit</label><input type="number" id="cfgLimitQuiz"></div>
-            <div class="form-group"><label>Captcha Limit</label><input type="number" id="cfgLimitCaptcha"></div>
             <div class="form-group"><label>Visit Website Limit</label><input type="number" id="cfgLimitVisit"></div>
-            <div class="form-group"><label>Watch Video Limit</label><input type="number" id="cfgLimitVideo"></div>
           </div>
-          <h4 style="margin-top: 15px; margin-bottom: 10px; color:var(--primary);">Video Ad Settings</h4>
-          <div class="form-group"><label>Ad Embed URL</label><input type="text" id="cfgAdUrl"></div>
-          <div class="form-group"><label>Ad Duration (Seconds)</label><input type="number" id="cfgAdDuration"></div>
+
           <button class="btn-primary" onclick="saveConfig()">💾 Save All Configurations</button>
+        </div>
+      </div>
+
+      <div id="links" class="page">
+        <div class="card">
+          <h3>🔗 Manage Task Links</h3>
+          <div class="link-section">
+            <h4 style="margin-bottom: 10px; color: var(--primary);">🌐 Visit Website Links</h4>
+            <button class="btn-sm" style="background: var(--success); margin-bottom: 10px;" onclick="openLinkModal('visit')">➕ Add Visit Link</button>
+            <div id="visitLinksList"></div>
+          </div>
         </div>
       </div>
 
       <div id="coinRate" class="page">
         <div class="card">
           <h3>🪙 Coin Conversion Rate Management</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">
-            এখান থেকে কয়েন থেকে টাকার কনভার্শন রেট পরিবর্তন করতে পারবেন। এই রেট ইউজার অ্যাপের সব জায়গায় লাইভ আপডেট হবে (ব্যালেন্স, উইথড্র, মিনিমাম লিমিট ইত্যাদি)।
-          </p>
-
           <div class="coin-rate-editor">
             <h4>💱 কনভার্শন রেট সেট করুন</h4>
             <p class="desc">উদাহরণ: "100 Coins = ৳1" সেট করতে বামে 100 এবং ডানে 1 দিন</p>
-            
             <div class="rate-inputs">
               <div class="input-group">
                 <label>Coins</label>
                 <input type="number" id="cfgCoinsPerTk" value="100" min="1" oninput="updateRatePreview()">
               </div>
-              
               <div class="equals">=</div>
-              
               <div class="input-group">
                 <label>টাকা (৳)</label>
                 <input type="number" id="cfgTkPerBlock" value="1" min="0.01" step="0.01" oninput="updateRatePreview()">
               </div>
             </div>
-            
             <div class="preview" id="ratePreviewBox">
               📌 Preview: <b id="ratePreviewText">100 Coins = ৳1</b>
             </div>
           </div>
-
           <button class="btn-primary" style="background: var(--success);" onclick="saveCoinRate()">💾 Save Coin Rate</button>
-
-          <div class="rate-info-box" style="margin-top: 20px;">
-            <h4>📊 রেট ক্যালকুলেশন উদাহরণ</h4>
-            <div id="rateExamples" style="text-align: left; margin-top: 10px; font-size: 13px; line-height: 1.8;"></div>
-          </div>
         </div>
       </div>
 
       <div id="banners" class="page">
         <div class="card">
           <h3>🖼️ Slider Banner Management</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">এখান থেকে অ্যাপের হোম স্ক্রিনের স্লাইডার ব্যানার অ্যাড, এডিট এবং ডিলিট করতে পারবেন।</p>
           <button class="btn-primary" style="background: var(--success); margin-bottom: 15px;" onclick="openBannerModal()">➕ Add New Banner</button>
           <div id="bannerListContainer"></div>
+        </div>
+      </div>
+
+      <div id="adNetworks" class="page">
+        <div class="card">
+          <h3>📢 Ad Networks Configuration</h3>
+          
+          <div class="ad-config-box">
+            <h4>🎁 Daily Claim <span class="ad-network-badge" style="background:#f59e0b;">Adsgram</span></h4>
+            <div class="form-group"><label>Adsgram Block ID</label><input type="text" id="adBlockDailyClaim" placeholder="Adsgram Block ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 1 <span class="ad-network-badge" style="background:#f093fb;">Adsgram</span></h4>
+            <div class="form-group"><label>Adsgram Block ID</label><input type="text" id="adBlockRocket1" placeholder="Adsgram Block ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 2 <span class="ad-network-badge" style="background:#4facfe;">Monetag</span></h4>
+            <div class="form-group"><label>Monetag Zone ID</label><input type="text" id="adZoneRocket2" placeholder="Monetag Zone ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 3 <span class="ad-network-badge" style="background:#43e97b;">Adsgram</span></h4>
+            <div class="form-group"><label>Adsgram Block ID</label><input type="text" id="adBlockRocket3" placeholder="Adsgram Block ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 4 <span class="ad-network-badge" style="background:#fa709a;">Monetag</span></h4>
+            <div class="form-group"><label>Monetag Zone ID</label><input type="text" id="adZoneRocket4" placeholder="Monetag Zone ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 5 <span class="ad-network-badge" style="background:#a855f7;">Adsgram</span></h4>
+            <div class="form-group"><label>Adsgram Block ID</label><input type="text" id="adBlockRocket5" placeholder="Adsgram Block ID"></div>
+          </div>
+
+          <div class="ad-config-box">
+            <h4>🚀 Rocket 6 <span class="ad-network-badge" style="background:#14b8a6;">Monetag</span></h4>
+            <div class="form-group"><label>Monetag Zone ID</label><input type="text" id="adZoneRocket6" placeholder="Monetag Zone ID"></div>
+          </div>
+
+          <button class="btn-primary" style="background: var(--success);" onclick="saveAdNetworks()">💾 Save Ad Networks</button>
         </div>
       </div>
 
@@ -443,10 +431,10 @@
           <h3>🛡️ Fraud Prevention Settings</h3>
           <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">এখান থেকে ইউজারদের প্রতারণা নিয়ন্ত্রণ করুন। এই সেটিংস ইউজার অ্যাপে লাইভ কাজ করবে।</p>
           
-          <div class="fraud-row">
+          <div class="fraud-row" style="background:#fef2f2; border-left: 4px solid var(--danger); padding-left: 10px; border-radius: 8px; margin-bottom: 15px;">
             <div class="fraud-info">
-              <b>VPN Block (ভিপিএন ব্লক)</b>
-              <small>ইউজাররা ভিপিএন (VPN) ব্যবহার করে অ্যাপে প্রবেশ বা কাজ করা থেকে বিরত থাকবে।</small>
+              <b style="color:var(--danger);">Block VPN / Proxy Users 🚫</b>
+              <small>ইউজার VPN বা Proxy ব্যবহার করে অ্যাপে ঢুকলে বা কাজ করলে তার অ্যাকাউন্ট অটোমেটিক ব্লক হয়ে যাবে।</small>
             </div>
             <label class="switch"><input type="checkbox" id="fraudVpnBlock"><span class="slider"></span></label>
           </div>
@@ -461,10 +449,18 @@
 
           <div class="fraud-row">
             <div class="fraud-info">
-              <b>Spam Timer (Seconds)</b>
-              <small>একটি টাস্ক শেষ করে পরের টাস্ক কত সেকেন্ড পর করা যাবে।</small>
+              <b>Auto-Clicker / Bot Detection</b>
+              <small>এটি চালু করলে অটো-ক্লিকার বা বট ইউজার কোনো বাটনে খুব দ্রুত ক্লিক করলে তা ধরা পড়বে এবং রিওয়ার্ড বাতিল হবে।</small>
             </div>
-            <input type="number" id="fraudSpamTimer" value="5" min="0">
+            <label class="switch"><input type="checkbox" id="fraudBotDetect" checked><span class="slider"></span></label>
+          </div>
+
+          <div class="fraud-row">
+            <div class="fraud-info">
+              <b>Min Click Interval (Milliseconds)</b>
+              <small>ইউজার দুটি ক্লিকের মাঝে সর্বনিম্ন কত মিলি-সেকেন্ড অপেক্ষা করবে। এর কম হলে বট হিসেবে ধরা হবে। (যেমন: 300ms)</small>
+            </div>
+            <input type="number" id="fraudBotClickInterval" value="300" min="100">
           </div>
 
           <div class="fraud-row">
@@ -486,7 +482,7 @@
           <div class="fraud-row">
             <div class="fraud-info">
               <b>Block Multi Account (Same IP)</b>
-              <small>একই আইপি এড্রেস বা নেটওয়ার্ক থেকে একাধিক অ্যাকাউন্ট খোলা রোধ করবে।</small>
+              <small>একই আইপি এড্রেস বা নেটওয়ার্ক থেকে একাধিক অ্যাকাউন্ট খোলা রোধ করবে।</small>
             </div>
             <label class="switch"><input type="checkbox" id="fraudIpBlock" checked><span class="slider"></span></label>
           </div>
@@ -519,7 +515,6 @@
 
         <div class="card" style="margin-top: 20px;">
           <h3>Send Notification to All Users</h3>
-          <p style="font-size: 13px; color: #6b7280; margin-bottom: 15px;">সকল ইউজারকে একসাথে একটি মেসেজ পাঠান।</p>
           <div class="form-group">
             <label>Message for All Users</label>
             <input type="text" id="notifAllMsg" placeholder="Type your message for all users...">
@@ -538,11 +533,6 @@
             <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmAdminPass"></div>
             <button class="btn-primary" style="background: #856404;" onclick="changeAdminPassword()">🔑 Update Password</button>
           </div>
-        </div>
-        <div class="card">
-          <h3>Danger Zone</h3>
-          <p style="color: var(--danger); margin-bottom: 15px; font-size: 14px;">Warning: Clearing data will remove all user progress, withdrawals, and settings permanently.</p>
-          <button class="btn-danger" style="padding: 10px 20px; font-size: 14px; width:100%;" onclick="clearAllData()">🗑️ Clear All Data</button>
         </div>
       </div>
     </div>
@@ -577,21 +567,27 @@
       <label>Button Action (কোন পেজে যাবে)</label>
       <select id="bAction">
         <option value="referModal">Refer Modal</option>
-        <option value="wheelModal">Lucky Spin Modal</option>
-        <option value="videoModal">Watch Video Modal</option>
-        <option value="scratchModal">Scratch Card Modal</option>
-        <option value="quizModal">Math Quiz Modal</option>
-        <option value="visitModal">Visit Website Modal</option>
         <option value="dailyClaimModal">Daily Claim Modal</option>
+        <option value="visitModal">Visit Website Modal</option>
+        <option value="rocketModal">Rocket Task Modal</option>
         <option value="withdrawModal">Withdraw Modal</option>
+        <option value="url">External URL (Custom Link)</option>
       </select>
     </div>
+    <div class="form-group"><label>Custom URL (যদি Action এ url সিলেক্ট করেন)</label><input type="text" id="bUrl" placeholder="https://t.me/yourchannel"></div>
     <div class="form-group">
       <label>Icon (ইমোজি)</label>
       <select id="bIcon">
-        <option value="🎁">🎁 Gift</option><option value="🎡">🎡 Wheel</option><option value="📺">📺 Video</option>
-        <option value="🎫">🎫 Ticket</option><option value="💰">💰 Money</option><option value="🏆">🏆 Trophy</option>
-        <option value="🔗">🔗 Link</option><option value="🌟">🌟 Star</option><option value="🪙">🪙 Coin</option>
+        <option value="🎁">🎁 Gift</option>
+        <option value="🚀">🚀 Rocket</option>
+        <option value="💰">💰 Money</option>
+        <option value="🏆">🏆 Trophy</option>
+        <option value="🔗">🔗 Link</option>
+        <option value="🌟">🌟 Star</option>
+        <option value="🪙">🪙 Coin</option>
+        <option value="🌐">🌐 Globe</option>
+        <option value="📢">📢 Megaphone</option>
+        <option value="👥">👥 Group</option>
       </select>
     </div>
     <div class="grid-2">
@@ -612,7 +608,6 @@
     <div class="form-group"><label>Method Name</label><input type="text" id="mName" placeholder="যেমন: Bkash, Nagad, Rocket"></div>
     <div class="form-group"><label>Logo URL (Optional)</label><input type="text" id="mLogo" placeholder="https://example.com/logo.png"></div>
     <div class="form-group"><label>Minimum Amount (৳ Tk)</label><input type="number" id="mMinAmount" placeholder="1"></div>
-    <p style="font-size: 12px; color: #6b7280; margin-bottom: 10px;" id="methodRateInfo">💡 নোট: 100 Coins = ৳1 | আপনার দেওয়া টাকার মান × 100 = ইউজারের কয়েন লিমিট</p>
     <div class="form-group">
       <label>Input Type (ইউজার কী ইনপুট দেবে)</label>
       <select id="mInputType">
@@ -627,10 +622,26 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="linkModal">
+  <div class="modal-box">
+    <h3 id="linkModalTitle">➕ Add New Link</h3>
+    <input type="hidden" id="editLinkType">
+    <input type="hidden" id="editLinkIdx">
+    <div class="form-group"><label>Title / Name</label><input type="text" id="lTitle" placeholder="Website Name"></div>
+    <div class="form-group"><label>URL</label><input type="text" id="lUrl" placeholder="https://..."></div>
+    <div class="grid-2">
+      <button class="btn-primary" style="background:#6b7280; margin-top:0;" onclick="closeLinkModal()">Cancel</button>
+      <button class="btn-primary" style="background: var(--success); margin-top:0;" onclick="saveLink()">Save Link</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast">Message</div>
 
 <script>
-  // Firebase Configuration & Initialization
+  /* ============================================================
+     ✅ 1. FIREBASE CONFIGURATION (আপনার নিজের কনফিগ বসান)
+     ============================================================ */
   const firebaseConfig = {
   apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   authDomain: "rofiqul.firebaseapp.com",
@@ -642,8 +653,11 @@
   measurementId: "G-7N3YD934QH"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+  // Initialize Firebase
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
 
   let isTyping = false;
   document.addEventListener('focusin', (e) => {
@@ -653,15 +667,83 @@
     if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') isTyping = false;
   });
 
+  let MASTER_CONFIG = null;
+  let ALL_USERS = [];
   let COINS_PER_TK = 100;
   let TK_PER_COIN_BLOCK = 1;
-  let memoryDb = null;
 
-  function loadRatesFromConfig() {
-    if(!memoryDb || !memoryDb.config || !memoryDb.config.coinSystem) return;
-    COINS_PER_TK = memoryDb.config.coinSystem.coinsPerTk || 100;
-    TK_PER_COIN_BLOCK = memoryDb.config.coinSystem.tkPerCoinsBlock || 1;
-  }
+  // ✅ ডিফল্ট ডাটা 
+  const DEFAULT_BANNERS = [
+    { title: '📢 Telegram Channel', subtitle: 'আমাদের অফিসিয়াল চ্যানেলে জয়েন করুন!', btnText: 'Join Now →', action: 'url', url: 'https://t.me/your_channel', icon: '📢', color1: '#0088cc', color2: '#00a8e8' },
+    { title: '👥 Telegram Group', subtitle: 'আমাদের কমিউনিটি গ্রুপে জয়েন করুন!', btnText: 'Join Now →', action: 'url', url: 'https://t.me/your_group', icon: '👥', color1: '#229ED9', color2: '#0077b6' },
+    { title: '🎁 Daily Claim', subtitle: 'প্রতিদিন ফ্রি কয়েন নিন!', btnText: 'Claim Now →', action: 'dailyClaimModal', url: '', icon: '🎁', color1: '#f59e0b', color2: '#ef4444' },
+    { title: '🚀 Rocket', subtitle: 'দ্রুত ইনকাম শুরু করুন!', btnText: 'Start Now →', action: 'rocketModal', url: '', icon: '🚀', color1: '#f093fb', color2: '#f5576c' },
+    { title: '🌐 Visit Website', subtitle: 'ওয়েবসাইট ভিজিট করে ইনকাম!', btnText: 'Visit Now →', action: 'visitModal', url: '', icon: '🌐', color1: '#0ea5e9', color2: '#10b981' }
+  ];
+
+  const DEFAULT_METHODS = [
+    { id: 'recharge', name: 'Mobile Recharge', logo: 'https://cdn-icons-png.flaticon.com/512/3595/3595255.png', minAmount: 1, inputType: 'number' },
+    { id: 'bkash', name: 'Bkash', logo: 'https://download.logo.wine/logo/BKash/BKash-Logo.wine.png', minAmount: 1, inputType: 'number' },
+    { id: 'nagad', name: 'Nagad', logo: 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png', minAmount: 1, inputType: 'number' },
+    { id: 'usdt', name: 'USDT (TRC20)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', minAmount: 1, inputType: 'text' }
+  ];
+
+  const DEFAULT_FRAUD = { vpnBlock: false, forceAd: true, deviceBlock: true, ipBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, botDetect: true, botClickInterval: 300 };
+
+  // ✅ Firestore Sync Realtime
+  db.collection("settings").doc("config").onSnapshot((doc) => {
+    if (doc.exists) {
+      MASTER_CONFIG = doc.data();
+      COINS_PER_TK = MASTER_CONFIG.coinSystem?.coinsPerTk || 100;
+      TK_PER_COIN_BLOCK = MASTER_CONFIG.coinSystem?.tkPerCoinsBlock || 1;
+      
+      // সেটিংসে কিছু মিসিং থাকলে ডিফল্ট সেট করে দিবে (update instead of set)
+      let needsUpdate = false;
+      let updateObj = {};
+      if(!MASTER_CONFIG.banners || MASTER_CONFIG.banners.length === 0) { updateObj.banners = DEFAULT_BANNERS; needsUpdate = true; }
+      if(!MASTER_CONFIG.withdrawMethods || MASTER_CONFIG.withdrawMethods.length === 0) { updateObj.withdrawMethods = DEFAULT_METHODS; needsUpdate = true; }
+      if(!MASTER_CONFIG.fraud) { updateObj.fraud = DEFAULT_FRAUD; needsUpdate = true; }
+      
+      if(needsUpdate) {
+        db.collection("settings").doc("config").update(updateObj);
+      }
+      
+    } else {
+      db.collection("settings").doc("config").set({
+        dailyClaim: 5, refBonus: 50, minWithdraw: 50,
+        visitReward: 2, limitVisit: 10,
+        rocket1Reward: 3, rocket2Reward: 5, rocket3Reward: 8, rocket4Reward: 12, rocket5Reward: 15, rocket6Reward: 20,
+        limitRocket1: 10, limitRocket2: 10, limitRocket3: 10, limitRocket4: 10, limitRocket5: 10, limitRocket6: 10,
+        cooldownSec: 60,
+        coinSystem: { coinsPerTk: 100, tkPerCoinsBlock: 1 },
+        banners: DEFAULT_BANNERS,
+        withdrawMethods: DEFAULT_METHODS,
+        visitLinks: ['https://example.com'],
+        adNetworks: {
+          dailyClaim: { network: 'adsgram', blockId: '' },
+          rocket1: { network: 'adsgram', blockId: '' },
+          rocket2: { network: 'monetag', zoneId: '' },
+          rocket3: { network: 'adsgram', blockId: '' },
+          rocket4: { network: 'monetag', zoneId: '' },
+          rocket5: { network: 'adsgram', blockId: '' },
+          rocket6: { network: 'monetag', zoneId: '' }
+        },
+        fraud: DEFAULT_FRAUD
+      });
+    }
+  });
+
+  db.collection("users").onSnapshot((snapshot) => {
+    ALL_USERS = [];
+    snapshot.forEach(doc => {
+      ALL_USERS.push({ id: doc.id, ...doc.data() });
+    });
+    
+    if (document.getElementById('dashboard').classList.contains('active')) initDashboard();
+    if (document.getElementById('users').classList.contains('active')) loadUsers();
+    if (document.getElementById('withdrawals').classList.contains('active')) loadWithdrawals();
+    if (document.getElementById('notifications').classList.contains('active')) loadNotifUsers();
+  });
 
   function coinsToTk(coins) {
     if(!COINS_PER_TK || COINS_PER_TK <= 0) return 0;
@@ -693,7 +775,8 @@
     if(pass === storedPass) {
       document.getElementById('authScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
-      initFirebaseSync();
+      initDashboard();
+      loadConfig(); 
     } else {
       showToast('❌ Wrong Password!', '#ef4444');
     }
@@ -713,13 +796,16 @@
     document.getElementById('pageTitle').innerText = title;
     document.querySelector('.mobile-topbar span').innerText = title;
     if(window.innerWidth <= 768) toggleSidebar();
+    
     if(pageId === 'dashboard') initDashboard();
     if(pageId === 'users') loadUsers();
     if(pageId === 'withdrawals') loadWithdrawals();
     if(pageId === 'withdrawMethods') loadMethods();
     if(pageId === 'tasks') loadConfig();
+    if(pageId === 'links') loadLinks();
     if(pageId === 'coinRate') loadCoinRate();
     if(pageId === 'banners') loadBanners();
+    if(pageId === 'adNetworks') loadAdNetworks();
     if(pageId === 'fraud') loadFraudSettings();
     if(pageId === 'notifications') loadNotifUsers();
   }
@@ -740,140 +826,35 @@
     return dateStr;
   }
 
-  const defaultConfig = {
-    dailyClaim: 5, refBonus: 50, minWithdraw: 50,
-    spinMax: 15, scratchMax: 15, quizReward: 2, captchaReward: 1, visitReward: 2, videoReward: 3,
-    limitSpin: 10, limitScratch: 10, limitQuiz: 10, limitCaptcha: 10, limitVisit: 10, limitVideo: 10,
-    adUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ', adDuration: 15,
-    coinSystem: { coinsPerTk: 100, tkPerCoinsBlock: 1 },
-    fraud: { forceAd: true, vpnBlock: false, multiAccountBlock: true, deviceBlock: true, ipBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 },
-    withdrawMethods: [
-      { id: 'recharge', name: 'Mobile Recharge', logo: 'https://cdn-icons-png.flaticon.com/512/3595/3595255.png', minAmount: 1, inputType: 'number' },
-      { id: 'bkash', name: 'Bkash', logo: 'https://download.logo.wine/logo/BKash/BKash-Logo.wine.png', minAmount: 1, inputType: 'number' },
-      { id: 'nagad', name: 'Nagad', logo: 'https://download.logo.wine/logo/Nagad/Nagad-Logo.wine.png', minAmount: 1, inputType: 'number' },
-      { id: 'usdt', name: 'USDT (TRC20)', logo: 'https://cryptologos.cc/logos/tether-usdt-logo.png', minAmount: 1, inputType: 'text' }
-    ]
-  };
-
-  const defaultBanners = [
-    { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান 🪙50 কয়েন বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
-    { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
-    { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটি ভিডিওতে পান 🪙3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
-    { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
-  ];
-
-  function initFirebaseSync() {
-    db.ref('master_db').on('value', (snapshot) => {
-      let data = snapshot.val();
-      if(!data) {
-        data = { users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] };
-        db.ref('master_db').set(data);
-      }
-      
-      if (data.users && !Array.isArray(data.users)) {
-        data.users = Object.values(data.users);
-      }
-      if (data.activityLogs && !Array.isArray(data.activityLogs)) {
-        data.activityLogs = Object.values(data.activityLogs);
-      }
-      if (data.banners && !Array.isArray(data.banners)) {
-        data.banners = Object.values(data.banners);
-      }
-      if (data.config && data.config.withdrawMethods && !Array.isArray(data.config.withdrawMethods)) {
-        data.config.withdrawMethods = Object.values(data.config.withdrawMethods);
-      }
-
-      if(!data.users) data.users = [];
-      if(!data.config) data.config = defaultConfig;
-      if(!data.config.fraud) data.config.fraud = defaultConfig.fraud;
-      if(!data.config.coinSystem) data.config.coinSystem = defaultConfig.coinSystem;
-      if(!data.config.withdrawMethods || data.config.withdrawMethods.length === 0) {
-        data.config.withdrawMethods = defaultConfig.withdrawMethods;
-      }
-      if(!data.banners || data.banners.length === 0) {
-        data.banners = defaultBanners;
-      }
-      if(!data.activityLogs) data.activityLogs = [];
-
-      memoryDb = data;
-      loadRatesFromConfig();
-
-      if(!isTyping) {
-        const activePage = document.querySelector('.page.active');
-        if(activePage) {
-          const pageId = activePage.id;
-          if(pageId === 'dashboard') initDashboard();
-          if(pageId === 'users') loadUsers();
-          if(pageId === 'withdrawals') loadWithdrawals();
-          if(pageId === 'withdrawMethods') loadMethods();
-          if(pageId === 'tasks') loadConfig();
-          if(pageId === 'coinRate') loadCoinRate();
-          if(pageId === 'banners') loadBanners();
-          if(pageId === 'fraud') loadFraudSettings();
-          if(pageId === 'notifications') loadNotifUsers();
-        }
-      }
-    });
-  }
-
-  function getData() {
-    return memoryDb || { users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] };
-  }
-
-  function setData(data) {
-    memoryDb = data;
-    db.ref('master_db').set(data);
-  }
-
   let chartInstance = null;
   function initDashboard() {
-    const data = getData();
-    loadRatesFromConfig();
+    const now = Date.now();
+    const activeThreshold = 2 * 60 * 1000; // 2 minutes
+    let activeCount = 0;
     
-    // সঠিক লজিক: ইউজারদের lastActive টাইম চেক করা হবে (গত ৫ মিনিটের মধ্যে যারা অ্যাপে ছিল বা কাজ করেছে)
-    const nowTimestamp = Date.now();
-    const activeThreshold = 5 * 60 * 1000; // ৫ মিনিট
-    
-    const activeUsersCount = data.users.filter(u => {
-      if (!u.lastActive) return false;
-      return (nowTimestamp - u.lastActive) <= activeThreshold;
-    }).length;
+    ALL_USERS.forEach(u => {
+        if (u.lastActionTime && (now - u.lastActionTime) < activeThreshold) {
+            activeCount++;
+        }
+    });
 
-    let pendingCoins = 0;
-    let confirmedCoins = 0;
-    let rejectedCoins = 0;
+    let pendingCoins = 0, confirmedCoins = 0, rejectedCoins = 0;
+    let pendingWithdrawalsCount = 0, confirmedWithdrawalsCount = 0, rejectedWithdrawalsCount = 0;
 
-    data.users.forEach(u => {
-      const withdrawList = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : Object.values(u.withdrawHistory || {});
-      withdrawList.forEach(w => {
-        if (w.status === 'pending') pendingCoins += w.amount;
-        else if (w.status === 'confirm') confirmedCoins += w.amount;
-        else if (w.status === 'rejected') rejectedCoins += w.amount;
+    ALL_USERS.forEach(u => {
+      (u.withdrawHistory || []).forEach(w => {
+        if (w.status === 'pending') { pendingCoins += w.amount; pendingWithdrawalsCount++; }
+        else if (w.status === 'confirm') { confirmedCoins += w.amount; confirmedWithdrawalsCount++; }
+        else if (w.status === 'rejected') { rejectedCoins += w.amount; rejectedWithdrawalsCount++; }
       });
     });
 
-    const totalCoins = data.users.reduce((sum, u) => sum + (u.balance || 0), 0);
-    
-    const pendingWithdrawalsCount = data.users.reduce((sum, u) => {
-      const list = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : Object.values(u.withdrawHistory || {});
-      return sum + list.filter(w => w.status === 'pending').length;
-    }, 0);
-    
-    const confirmedWithdrawalsCount = data.users.reduce((sum, u) => {
-      const list = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : Object.values(u.withdrawHistory || {});
-      return sum + list.filter(w => w.status === 'confirm').length;
-    }, 0);
-    
-    const rejectedWithdrawalsCount = data.users.reduce((sum, u) => {
-      const list = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : Object.values(u.withdrawHistory || {});
-      return sum + list.filter(w => w.status === 'rejected').length;
-    }, 0);
+    const totalCoins = ALL_USERS.reduce((sum, u) => sum + (u.balance || 0), 0);
+    const totalRefer = ALL_USERS.reduce((sum, u) => sum + (u.totalRef || 0), 0);
+    const referCoins = ALL_USERS.reduce((sum, u) => sum + (u.refIncome || 0), 0);
 
-    const totalRefer = data.users.reduce((sum, u) => sum + (u.totalRef || 0), 0);
-    const referCoins = data.users.reduce((sum, u) => sum + (u.refIncome || 0), 0);
-
-    document.getElementById('statActive').innerText = activeUsersCount;
-    document.getElementById('statUsers').innerText = data.users.length;
+    document.getElementById('statActive').innerText = activeCount;
+    document.getElementById('statUsers').innerText = ALL_USERS.length;
     
     document.getElementById('statBalanceCoins').innerText = '🪙 ' + Math.floor(totalCoins);
     document.getElementById('statBalanceTk').innerText = '≈ ৳' + coinsToTk(totalCoins).toFixed(2);
@@ -895,8 +876,6 @@
     document.getElementById('statReferCoins').innerText = '🪙 ' + Math.floor(referCoins);
     document.getElementById('statReferTk').innerText = '≈ ৳' + coinsToTk(referCoins).toFixed(2);
 
-    loadActivityLogs();
-
     const ctx = document.getElementById('myChart').getContext('2d');
     if(chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
@@ -906,47 +885,17 @@
     });
   }
 
-  function loadActivityLogs() {
-    const data = getData();
-    const logs = data.activityLogs || [];
-    const tbody = document.querySelector('#activityLogTable tbody');
-    
-    if (logs.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#6b7280;">No activity yet</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = logs.slice(-20).reverse().map(log => {
-      const user = data.users.find(u => u.id === log.userId);
-      const avatarUrl = user && user.photo ? user.photo : `https://ui-avatars.com/api/?name=${(log.userName || 'U').charAt(0)}&background=667eea&color=fff`;
-      
-      let displayTime = log.time || 'N/A';
-      
-      return `
-        <tr>
-          <td>
-            <div class="user-info-cell">
-              <img src="${avatarUrl}" alt="${log.userName}">
-              <span><b>${log.userName || 'Unknown'}</b></span>
-            </div>
-          </td>
-          <td>${log.phone || 'N/A'}</td>
-          <td><span style="background: #e0e7ff; color: #4f46e5; padding: 4px 8px; border-radius: 5px; font-size: 12px; font-weight: bold;">${log.action}</span></td>
-          <td style="font-size: 12px; color: #6b7280;">${displayTime}</td>
-        </tr>
-      `;
-    }).join('');
-  }
+  setInterval(() => {
+    if (document.getElementById('dashboard').classList.contains('active')) initDashboard();
+  }, 5000);
 
   function loadUsers() {
-    const data = getData();
-    loadRatesFromConfig();
     const tbody = document.querySelector('#userTable tbody');
     const search = (document.getElementById('searchUser').value || '').toLowerCase();
     
-    const filtered = data.users.filter(u => 
-      (u.name && u.name.toLowerCase().includes(search)) || 
-      (u.phone && u.phone.toLowerCase().includes(search)) ||
+    const filtered = ALL_USERS.filter(u => 
+      u.name.toLowerCase().includes(search) || 
+      u.phone.toLowerCase().includes(search) ||
       (u.email && u.email.toLowerCase().includes(search))
     );
 
@@ -955,10 +904,19 @@
       return;
     }
 
+    const now = Date.now();
+    const activeThreshold = 2 * 60 * 1000;
+
     tbody.innerHTML = filtered.map(u => {
-      const avatarUrl = u.photo || `https://ui-avatars.com/api/?name=${(u.name || 'U').charAt(0)}&background=667eea&color=fff`;
+      const avatarUrl = u.photo || `https://ui-avatars.com/api/?name=${u.name.charAt(0)}&background=667eea&color=fff`;
       const coins = u.balance || 0;
       const tk = coinsToTk(coins);
+      const isOnline = (u.lastActionTime && (now - u.lastActionTime) < activeThreshold);
+      const statusClass = isOnline ? 'online' : 'offline';
+      const statusText = isOnline ? 'Online' : 'Offline';
+      const userStatusClass = u.isBlocked ? 'rejected' : statusClass;
+      const userStatusText = u.isBlocked ? 'Blocked' : statusText;
+
       return `
       <tr>
         <td><div class="user-info-cell"><img src="${avatarUrl}" alt="${u.name}"><span><b>${u.name}</b></span></div></td>
@@ -969,33 +927,28 @@
           <small style="color:#6b7280;">≈ ৳${tk.toFixed(2)}</small>
         </td>
         <td>${u.totalRef || 0}</td>
-        <td><span class="status ${u.isBlocked ? 'rejected' : 'confirm'}">${u.isBlocked ? 'Blocked' : 'Active'}</span></td>
+        <td><span class="status ${userStatusClass}">${userStatusText}</span></td>
         <td>
-          <button class="btn-sm" style="background:#3b82f6;" onclick="openEditUserModal(${u.id})">✏️ Edit</button>
-          <button class="btn-sm" style="background:${u.isBlocked ? '#10b981' : '#f59e0b'};" onclick="toggleBlock(${u.id})">${u.isBlocked ? '🔓 Unblock' : '🔒 Block'}</button>
-          <button class="btn-sm" style="background:#ef4444;" onclick="deleteUser(${u.id})">🗑️ Delete</button>
+          <button class="btn-sm" style="background:#3b82f6;" onclick="openEditUserModal('${u.id}')">✏️ Edit</button>
+          <button class="btn-sm" style="background:${u.isBlocked ? '#10b981' : '#f59e0b'};" onclick="toggleBlock('${u.id}')">${u.isBlocked ? '🔓 Unblock' : '🔒 Block'}</button>
+          <button class="btn-sm" style="background:#ef4444;" onclick="deleteUser('${u.id}')">🗑️ Delete</button>
         </td>
       </tr>`;
     }).join('');
   }
 
   function searchUser() { loadUsers(); }
-  function toggleBlock(id) {
-    const data = getData();
-    const user = data.users.find(u => u.id === id);
+  
+  async function toggleBlock(id) {
+    const user = ALL_USERS.find(u => u.id === id);
     if(user) { 
-      user.isBlocked = !user.isBlocked; 
-      setData(data); 
-      loadUsers(); 
-      showToast(`User ${user.isBlocked ? 'blocked' : 'unblocked'}!`); 
+      await db.collection("users").doc(id).update({ isBlocked: !user.isBlocked });
+      showToast(`User ${!user.isBlocked ? 'blocked' : 'unblocked'}!`); 
     }
   }
-  function deleteUser(id) {
+  async function deleteUser(id) {
     if(!confirm('Are you sure you want to delete this user permanently?')) return;
-    const data = getData();
-    data.users = data.users.filter(u => u.id !== id);
-    setData(data); 
-    loadUsers(); 
+    await db.collection("users").doc(id).delete();
     showToast('🗑️ User deleted!', '#ef4444');
   }
   function openAddUserModal() {
@@ -1009,9 +962,7 @@
     document.getElementById('userModal').classList.add('active');
   }
   function openEditUserModal(id) {
-    const data = getData(); 
-    const user = data.users.find(u => u.id === id); 
-    if(!user) return;
+    const user = ALL_USERS.find(u => u.id === id); if(!user) return;
     document.getElementById('userModalTitle').innerText = '✏️ Edit User';
     document.getElementById('editUserId').value = user.id; 
     document.getElementById('editName').value = user.name;
@@ -1022,8 +973,8 @@
     document.getElementById('userModal').classList.add('active');
   }
   function closeUserModal() { document.getElementById('userModal').classList.remove('active'); }
-  function saveUser() {
-    const data = getData();
+  
+  async function saveUser() {
     const id = document.getElementById('editUserId').value;
     const name = document.getElementById('editName').value.trim();
     const phone = document.getElementById('editPhone').value.trim();
@@ -1034,59 +985,37 @@
     if(!name || !phone || !password) return showToast('All fields are required!', '#ef4444');
 
     if(id) {
-      const user = data.users.find(u => u.id == id);
-      if(user) { 
-        user.name = name; 
-        user.phone = phone; 
-        user.email = email;
-        user.password = password; 
-        user.balance = balance; 
-      }
+      await db.collection("users").doc(id).update({ name, phone, email, password, balance });
     } else {
+      const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
       const newUser = { 
-        id: Date.now(), name, phone, email, password, balance, 
+        name, phone, email, password, balance, myReferCode: uniqueReferCode,
         isBlocked: false, totalRef: 0, refIncome: 0, 
         withdrawHistory: [], notifications: [], 
-        spinUsed: 0, scratchUsed: 0, quizUsed: 0, captchaUsed: 0, 
-        visitUsed: [], videoUsed: [], lastClaimDate: '', lastResetDate: '', 
-        joinDate: new Date().toLocaleDateString() 
+        rocket1Used: 0, rocket2Used: 0, rocket3Used: 0, rocket4Used: 0, rocket5Used: 0, rocket6Used: 0,
+        visitUsed: [], lastClaimDate: '', lastResetDate: '', 
+        joinDate: new Date().toLocaleDateString(), lastActionTime: Date.now(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
-      data.users.push(newUser);
+      await db.collection("users").add(newUser);
     }
-    setData(data); 
-    closeUserModal(); 
-    loadUsers(); 
-    showToast(`✅ User ${id ? 'updated' : 'added'} successfully!`, '#10b981');
+    closeUserModal(); showToast(`✅ User ${id ? 'updated' : 'added'} successfully!`, '#10b981');
   }
 
   function loadWithdrawals() {
-    const data = getData();
-    loadRatesFromConfig();
     const tbody = document.querySelector('#withdrawTable tbody');
     const filter = document.getElementById('filterWithdrawStatus').value;
     let allWithdraws = [];
-    
-    data.users.forEach(u => { 
-      const withdrawList = Array.isArray(u.withdrawHistory) ? u.withdrawHistory : Object.values(u.withdrawHistory || {});
-      withdrawList.forEach((w, idx) => { 
-        allWithdraws.push({ ...w, userName: u.name, userPhoto: u.photo, userId: u.id, withdrawIdx: idx }); 
-      }); 
-    });
-    
+    ALL_USERS.forEach(u => { (u.withdrawHistory || []).forEach((w, idx) => { allWithdraws.push({ ...w, userName: u.name, userPhoto: u.photo, userId: u.id, withdrawIdx: idx, historyArray: u.withdrawHistory }); }); });
     if(filter !== 'all') allWithdraws = allWithdraws.filter(w => w.status === filter);
     allWithdraws.sort((a, b) => { if(a.status === 'pending' && b.status !== 'pending') return -1; if(a.status !== 'pending' && b.status === 'pending') return 1; return 0; });
 
-    if(allWithdraws.length === 0) { 
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#6b7280;">No withdrawal requests found</td></tr>'; 
-      return; 
-    }
-    
+    if(allWithdraws.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#6b7280;">No withdrawal requests found</td></tr>'; return; }
     tbody.innerHTML = allWithdraws.map(w => {
       let actionBtn = '';
-      if(w.status === 'pending') actionBtn = `<button class="btn-sm" style="background:#10b981;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'confirm')">✔️ Confirm</button><button class="btn-sm" style="background:#ef4444;" onclick="updateWithdrawStatus(${w.userId}, ${w.withdrawIdx}, 'rejected')">✖️ Reject</button>`;
+      if(w.status === 'pending') actionBtn = `<button class="btn-sm" style="background:#10b981;" onclick="updateWithdrawStatus('${w.userId}', ${w.withdrawIdx}, 'confirm')">✔️ Confirm</button><button class="btn-sm" style="background:#ef4444;" onclick="updateWithdrawStatus('${w.userId}', ${w.withdrawIdx}, 'rejected')">✖️ Reject</button>`;
       else if(w.status === 'confirm') actionBtn = `<span style="color:#10b981; font-weight:bold;">✔️ Confirmed</span>`;
       else actionBtn = `<span style="color:#ef4444; font-weight:bold;">✖️ Rejected</span>`;
-      const avatarUrl = w.userPhoto || `https://ui-avatars.com/api/?name=${(w.userName || 'U').charAt(0)}&background=667eea&color=fff`;
+      const avatarUrl = w.userPhoto || `https://ui-avatars.com/api/?name=${w.userName.charAt(0)}&background=667eea&color=fff`;
       
       const coinsAmt = w.amount;
       const tkAmt = w.tkAmount !== undefined ? w.tkAmount : coinsToTk(coinsAmt);
@@ -1104,52 +1033,44 @@
     }).join('');
   }
 
-  function updateWithdrawStatus(userId, withdrawIdx, newStatus) {
-    const data = getData(); 
-    const user = data.users.find(u => u.id === userId); 
-    if(!user || !user.withdrawHistory) return;
+  async function updateWithdrawStatus(userId, withdrawIdx, newStatus) {
+    const user = ALL_USERS.find(u => u.id === userId); if(!user || !user.withdrawHistory) return;
     
-    const withdrawList = Array.isArray(user.withdrawHistory) ? user.withdrawHistory : Object.values(user.withdrawHistory);
-    const request = withdrawList[withdrawIdx]; 
+    let newHistory = [...user.withdrawHistory];
+    const request = newHistory[withdrawIdx]; 
     if(!request) return;
     
+    let updates = {};
     if(newStatus === 'rejected' && request.status === 'pending') {
-      user.balance = (user.balance || 0) + request.amount;
+      updates.balance = firebase.firestore.FieldValue.increment(request.amount);
     }
     request.status = newStatus;
+    updates.withdrawHistory = newHistory;
     
-    user.notifications = Array.isArray(user.notifications) ? user.notifications : Object.values(user.notifications || {});
     const now = new Date();
     const timeStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2,'0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-    
     const coinsAmt = request.amount;
     const tkAmt = request.tkAmount !== undefined ? request.tkAmount : coinsToTk(coinsAmt);
     
+    let notifMsg = "";
     if(newStatus === 'confirm') {
-      user.notifications.push({ id: Date.now(), msg: `✅ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) অনুমোদিত হয়েছে!`, date: timeStr });
+      notifMsg = `✅ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) অনুমোদিত হয়েছে!`;
     } else {
-      user.notifications.push({ id: Date.now(), msg: `❌ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) বাতিল হয়েছে। কয়েন ফেরত দেওয়া হয়েছে।`, date: timeStr });
+      notifMsg = `❌ আপনার 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) উইথড্র রিকোয়েস্ট (${request.method}) বাতিল হয়েছে। কয়েন ফেরত দেওয়া হয়েছে।`;
     }
     
-    setData(data); 
-    loadWithdrawals(); 
-    initDashboard();
-    showToast(`${newStatus === 'confirm' ? '✅ Approved' : '❌ Rejected'}: 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)}) for ${user.name}`, newStatus === 'confirm' ? '#10b981' : '#ef4444');
+    updates.notifications = firebase.firestore.FieldValue.arrayUnion({ id: Date.now(), msg: notifMsg, date: timeStr });
+    
+    await db.collection("users").doc(userId).update(updates);
+    showToast(`${newStatus === 'confirm' ? '✅ Approved' : '❌ Rejected'}: 🪙${coinsAmt} for ${user.name}`, newStatus === 'confirm' ? '#10b981' : '#ef4444');
   }
 
   function loadMethods() {
-    const data = getData();
-    loadRatesFromConfig();
     const container = document.getElementById('methodListContainer');
-    const methods = data.config.withdrawMethods || [];
+    if(!MASTER_CONFIG || !MASTER_CONFIG.withdrawMethods) { container.innerHTML = '<p style="text-align:center; color:#6b7280;">No methods found.</p>'; return; }
+    const methods = MASTER_CONFIG.withdrawMethods;
     
-    const rateInfoEl = document.getElementById('withdrawRateInfo');
-    if(rateInfoEl) rateInfoEl.innerText = getRateText();
-    
-    if(!methods || methods.length === 0) { 
-      container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No methods found. Please add one.</p>'; 
-      return; 
-    }
+    document.getElementById('withdrawRateInfo').innerText = getRateText();
     
     container.innerHTML = methods.map((m, i) => {
       const minCoins = tkToCoins(m.minAmount);
@@ -1159,7 +1080,7 @@
           ${m.logo ? `<img src="${m.logo}" alt="${m.name}">` : `<span style="font-size:20px;">🏦</span>`}
           <div>
             <b>${m.name}</b><br>
-            <small style="color:#6b7280;">Min: ৳${m.minAmount} (🪙${minCoins} coins) | Input: ${m.inputType === 'number' ? 'Phone Number' : 'Text/Address'}</small>
+            <small style="color:#6b7280;">Min: ৳${m.minAmount} (🪙${minCoins} coins)</small>
           </div>
         </div>
         <div>
@@ -1171,328 +1092,347 @@
   }
 
   function openMethodModal() {
-    loadRatesFromConfig();
     document.getElementById('methodModalTitle').innerText = '➕ Add New Withdraw Method';
-    document.getElementById('editMethodIdx').value = ''; 
-    document.getElementById('mName').value = '';
-    document.getElementById('mLogo').value = ''; 
-    document.getElementById('mMinAmount').value = '1';
+    document.getElementById('editMethodIdx').value = ''; document.getElementById('mName').value = '';
+    document.getElementById('mLogo').value = ''; document.getElementById('mMinAmount').value = '1';
     document.getElementById('mInputType').value = 'number'; 
-    const rateInfo = document.getElementById('methodRateInfo');
-    if(rateInfo) rateInfo.innerText = `💡 নোট: ${getRateText()} | আপনার দেওয়া টাকার মান × ${COINS_PER_TK} = ইউজারের কয়েন লিমিট`;
     document.getElementById('methodModal').classList.add('active');
   }
   function openEditMethodModal(idx) {
-    loadRatesFromConfig();
-    const data = getData(); 
-    const method = data.config.withdrawMethods[idx]; 
-    if(!method) return;
+    const method = MASTER_CONFIG.withdrawMethods[idx]; if(!method) return;
     document.getElementById('methodModalTitle').innerText = '✏️ Edit Withdraw Method';
-    document.getElementById('editMethodIdx').value = idx; 
-    document.getElementById('mName').value = method.name;
-    document.getElementById('mLogo').value = method.logo || ''; 
-    document.getElementById('mMinAmount').value = method.minAmount;
+    document.getElementById('editMethodIdx').value = idx; document.getElementById('mName').value = method.name;
+    document.getElementById('mLogo').value = method.logo || ''; document.getElementById('mMinAmount').value = method.minAmount;
     document.getElementById('mInputType').value = method.inputType;
-    const rateInfo = document.getElementById('methodRateInfo');
-    if(rateInfo) rateInfo.innerText = `💡 নোট: ${getRateText()} | আপনার দেওয়া টাকার মান × ${COINS_PER_TK} = ইউজারের কয়েন লিমিট`;
     document.getElementById('methodModal').classList.add('active');
   }
   function closeMethodModal() { document.getElementById('methodModal').classList.remove('active'); }
-  function saveMethod() {
-    const data = getData(); 
-    const idx = document.getElementById('editMethodIdx').value;
-    const name = document.getElementById('mName').value.trim(); 
-    const logo = document.getElementById('mLogo').value.trim();
-    const minAmount = parseFloat(document.getElementById('mMinAmount').value) || 1; 
-    const inputType = document.getElementById('mInputType').value;
-    
+  
+  async function saveMethod() {
+    let idx = document.getElementById('editMethodIdx').value;
+    const name = document.getElementById('mName').value.trim(); const logo = document.getElementById('mLogo').value.trim();
+    const minAmount = parseFloat(document.getElementById('mMinAmount').value) || 1; const inputType = document.getElementById('mInputType').value;
     if(!name) return showToast('Method Name is required!', '#ef4444');
     const methodObj = { id: Date.now().toString(), name, logo, minAmount, inputType };
     
-    if(!data.config.withdrawMethods) data.config.withdrawMethods = [];
-    if(idx !== '') { 
-      data.config.withdrawMethods[idx] = methodObj; 
-      showToast('✅ Method updated!', '#10b981'); 
-    } else { 
-      data.config.withdrawMethods.push(methodObj); 
-      showToast('✅ New Method added!', '#10b981'); 
-    }
-    setData(data); 
-    closeMethodModal(); 
-    loadMethods();
+    let methods = MASTER_CONFIG.withdrawMethods || [];
+    if(idx !== '') methods[idx] = methodObj;
+    else methods.push(methodObj);
+    
+    await db.collection("settings").doc("config").update({ withdrawMethods: methods });
+    closeMethodModal(); showToast('✅ Method saved!', '#10b981');
   }
-  function deleteMethod(idx) {
-    if(!confirm('Are you sure you want to delete this method?')) return;
-    const data = getData(); 
-    data.config.withdrawMethods.splice(idx, 1);
-    setData(data); 
-    loadMethods(); 
+  async function deleteMethod(idx) {
+    if(!confirm('Are you sure?')) return;
+    let methods = MASTER_CONFIG.withdrawMethods;
+    methods.splice(idx, 1);
+    await db.collection("settings").doc("config").update({ withdrawMethods: methods });
     showToast('🗑️ Method deleted!', '#ef4444');
   }
 
   function loadConfig() {
-    const c = getData().config || defaultConfig;
-    loadRatesFromConfig();
-    document.getElementById('cfgDailyClaim').value = c.dailyClaim;
-    document.getElementById('cfgRefBonus').value = c.refBonus;
-    document.getElementById('cfgMinWithdraw').value = c.minWithdraw;
-    document.getElementById('cfgSpinMax').value = c.spinMax;
-    document.getElementById('cfgScratchMax').value = c.scratchMax;
-    document.getElementById('cfgQuizReward').value = c.quizReward;
-    document.getElementById('cfgCaptchaReward').value = c.captchaReward;
-    document.getElementById('cfgVisitReward').value = c.visitReward;
-    document.getElementById('cfgVideoReward').value = c.videoReward;
-    document.getElementById('cfgLimitSpin').value = c.limitSpin;
-    document.getElementById('cfgLimitScratch').value = c.limitScratch;
-    document.getElementById('cfgLimitQuiz').value = c.limitQuiz;
-    document.getElementById('cfgLimitCaptcha').value = c.limitCaptcha;
-    document.getElementById('cfgLimitVisit').value = c.limitVisit;
-    document.getElementById('cfgLimitVideo').value = c.limitVideo;
-    document.getElementById('cfgAdUrl').value = c.adUrl;
-    document.getElementById('cfgAdDuration').value = c.adDuration;
+    if(!MASTER_CONFIG) return;
+    const c = MASTER_CONFIG;
     
-    const rateInfo = document.getElementById('taskRateInfo');
-    if(rateInfo) rateInfo.innerText = `${getRateText()} | নিচের সব রিওয়ার্ড কয়েনে দেওয়া হবে`;
+    document.getElementById('cfgCooldownSec').value = c.cooldownSec || 60;
+    document.getElementById('cfgDailyClaim').value = c.dailyClaim || 5;
+    document.getElementById('cfgRefBonus').value = c.refBonus || 50;
+    document.getElementById('cfgMinWithdraw').value = c.minWithdraw || 50;
+    document.getElementById('cfgVisitReward').value = c.visitReward || 2;
+    document.getElementById('cfgLimitVisit').value = c.limitVisit || 10;
+
+    for(let i=1; i<=6; i++) {
+      document.getElementById('cfgRocket'+i+'Reward').value = c['rocket'+i+'Reward'] || 3;
+      document.getElementById('cfgLimitRocket'+i).value = c['limitRocket'+i] || 10;
+    }
+    document.getElementById('taskRateInfo').innerText = `${getRateText()} | নিচের সব রিওয়ার্ড কয়েনে দেওয়া হবে`;
   }
-  function saveConfig() {
-    const data = getData();
-    data.config = {
-      ...data.config,
-      dailyClaim: +document.getElementById('cfgDailyClaim').value, 
+
+  async function saveConfig() {
+    let newConfig = {
+      cooldownSec: +document.getElementById('cfgCooldownSec').value,
+      dailyClaim: +document.getElementById('cfgDailyClaim').value,
       refBonus: +document.getElementById('cfgRefBonus').value,
-      minWithdraw: +document.getElementById('cfgMinWithdraw').value, 
-      spinMax: +document.getElementById('cfgSpinMax').value,
-      scratchMax: +document.getElementById('cfgScratchMax').value, 
-      quizReward: +document.getElementById('cfgQuizReward').value,
-      captchaReward: +document.getElementById('cfgCaptchaReward').value, 
+      minWithdraw: +document.getElementById('cfgMinWithdraw').value,
       visitReward: +document.getElementById('cfgVisitReward').value,
-      videoReward: +document.getElementById('cfgVideoReward').value, 
-      limitSpin: +document.getElementById('cfgLimitSpin').value,
-      limitScratch: +document.getElementById('cfgLimitScratch').value, 
-      limitQuiz: +document.getElementById('cfgLimitQuiz').value,
-      limitCaptcha: +document.getElementById('cfgLimitCaptcha').value, 
-      limitVisit: +document.getElementById('cfgLimitVisit').value,
-      limitVideo: +document.getElementById('cfgLimitVideo').value, 
-      adUrl: document.getElementById('cfgAdUrl').value,
-      adDuration: +document.getElementById('cfgAdDuration').value
+      limitVisit: +document.getElementById('cfgLimitVisit').value
     };
-    setData(data); 
+
+    for(let i=1; i<=6; i++) {
+      newConfig['rocket'+i+'Reward'] = +document.getElementById('cfgRocket'+i+'Reward').value;
+      newConfig['limitRocket'+i] = +document.getElementById('cfgLimitRocket'+i).value;
+    }
+
+    await db.collection("settings").doc("config").update(newConfig);
     showToast('✅ All Configurations Saved!', '#10b981');
   }
 
+  function loadAdNetworks() {
+    if(!MASTER_CONFIG || !MASTER_CONFIG.adNetworks) return;
+    const adConfig = MASTER_CONFIG.adNetworks;
+    
+    document.getElementById('adBlockDailyClaim').value = adConfig.dailyClaim?.blockId || '';
+    document.getElementById('adBlockRocket1').value = adConfig.rocket1?.blockId || '';
+    document.getElementById('adZoneRocket2').value = adConfig.rocket2?.zoneId || '';
+    document.getElementById('adBlockRocket3').value = adConfig.rocket3?.blockId || '';
+    document.getElementById('adZoneRocket4').value = adConfig.rocket4?.zoneId || '';
+    document.getElementById('adBlockRocket5').value = adConfig.rocket5?.blockId || '';
+    document.getElementById('adZoneRocket6').value = adConfig.rocket6?.zoneId || '';
+  }
+
+  async function saveAdNetworks() {
+    let adNetworks = {
+      dailyClaim: { network: 'adsgram', blockId: document.getElementById('adBlockDailyClaim').value.trim() },
+      rocket1: { network: 'adsgram', blockId: document.getElementById('adBlockRocket1').value.trim() },
+      rocket2: { network: 'monetag', zoneId: document.getElementById('adZoneRocket2').value.trim() },
+      rocket3: { network: 'adsgram', blockId: document.getElementById('adBlockRocket3').value.trim() },
+      rocket4: { network: 'monetag', zoneId: document.getElementById('adZoneRocket4').value.trim() },
+      rocket5: { network: 'adsgram', blockId: document.getElementById('adBlockRocket5').value.trim() },
+      rocket6: { network: 'monetag', zoneId: document.getElementById('adZoneRocket6').value.trim() }
+    };
+    await db.collection("settings").doc("config").update({ adNetworks });
+    showToast('✅ Ad Networks Saved Successfully!', '#10b981');
+  }
+
+  function loadLinks() {
+    const visitList = document.getElementById('visitLinksList');
+    if(!MASTER_CONFIG || !MASTER_CONFIG.visitLinks || MASTER_CONFIG.visitLinks.length === 0) {
+      visitList.innerHTML = '<p style="color:#888; font-size:12px;">No links added yet.</p>';
+    } else {
+      visitList.innerHTML = MASTER_CONFIG.visitLinks.map((link, i) => {
+        const url = typeof link === 'string' ? link : link.url;
+        const title = typeof link === 'string' ? 'Website ' + (i+1) : (link.title || 'Website');
+        return `
+        <div class="link-list-item">
+          <div class="link-info">
+            <div class="link-title">${title}</div>
+            <div class="link-url">${url}</div>
+          </div>
+          <div>
+            <button class="btn-sm" style="background:#3b82f6;" onclick="editLink('visit', ${i})">✏️</button>
+            <button class="btn-sm" style="background:#ef4444;" onclick="deleteLink('visit', ${i})">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  function openLinkModal(type, idx = '') {
+    document.getElementById('editLinkType').value = type;
+    document.getElementById('editLinkIdx').value = idx;
+    const list = MASTER_CONFIG.visitLinks;
+    
+    if(idx !== '' && list[idx]) {
+      const item = list[idx];
+      document.getElementById('linkModalTitle').innerText = '✏️ Edit Link';
+      if(typeof item === 'string') {
+        document.getElementById('lTitle').value = 'Website ' + (parseInt(idx)+1);
+        document.getElementById('lUrl').value = item;
+      } else {
+        document.getElementById('lTitle').value = item.title || '';
+        document.getElementById('lUrl').value = item.url || '';
+      }
+    } else {
+      document.getElementById('linkModalTitle').innerText = '➕ Add New Link';
+      document.getElementById('lTitle').value = '';
+      document.getElementById('lUrl').value = '';
+    }
+    document.getElementById('linkModal').classList.add('active');
+  }
+
+  function closeLinkModal() { document.getElementById('linkModal').classList.remove('active'); }
+  function editLink(type, idx) { openLinkModal(type, idx); }
+  
+  async function saveLink() {
+    const idx = document.getElementById('editLinkIdx').value;
+    const title = document.getElementById('lTitle').value.trim();
+    const url = document.getElementById('lUrl').value.trim();
+    if(!url) return showToast('URL is required!', '#ef4444');
+
+    const linkObj = { title: title || 'Website', url: url };
+    let links = MASTER_CONFIG.visitLinks || [];
+    
+    if(idx !== '') links[idx] = linkObj;
+    else links.push(linkObj);
+
+    await db.collection("settings").doc("config").update({ visitLinks: links });
+    closeLinkModal(); showToast('✅ Link saved!', '#10b981');
+  }
+
+  async function deleteLink(type, idx) {
+    if(!confirm('Are you sure?')) return;
+    let links = MASTER_CONFIG.visitLinks;
+    links.splice(idx, 1);
+    await db.collection("settings").doc("config").update({ visitLinks: links });
+    showToast('🗑️ Link deleted!', '#ef4444');
+  }
+
   function loadCoinRate() {
-    const data = getData();
-    const coinSystem = data.config.coinSystem || { coinsPerTk: 100, tkPerCoinsBlock: 1 };
-    document.getElementById('cfgCoinsPerTk').value = coinSystem.coinsPerTk;
-    document.getElementById('cfgTkPerBlock').value = coinSystem.tkPerCoinsBlock;
+    if(!MASTER_CONFIG || !MASTER_CONFIG.coinSystem) return;
+    document.getElementById('cfgCoinsPerTk').value = MASTER_CONFIG.coinSystem.coinsPerTk;
+    document.getElementById('cfgTkPerBlock').value = MASTER_CONFIG.coinSystem.tkPerCoinsBlock;
     updateRatePreview();
   }
 
   function updateRatePreview() {
     const coins = parseFloat(document.getElementById('cfgCoinsPerTk').value) || 100;
     const tk = parseFloat(document.getElementById('cfgTkPerBlock').value) || 1;
-    
     document.getElementById('ratePreviewText').innerText = `${coins} Coins = ৳${tk}`;
-    
-    const examplesBox = document.getElementById('rateExamples');
-    if(examplesBox) {
-      const examples = [
-        { coins: 100, label: '100 Coins' },
-        { coins: 500, label: '500 Coins' },
-        { coins: 1000, label: '1000 Coins' },
-        { coins: 5000, label: '5000 Coins' },
-        { coins: 10000, label: '10000 Coins' }
-      ];
-      
-      examplesBox.innerHTML = examples.map(ex => {
-        const tkValue = (ex.coins / coins) * tk;
-        return `<p>🪙 <b>${ex.label}</b> = <b style="color: #10b981;">৳${tkValue.toFixed(2)}</b></p>`;
-      }).join('');
-    }
   }
 
-  function saveCoinRate() {
-    const data = getData();
+  async function saveCoinRate() {
     const coinsPerTk = parseFloat(document.getElementById('cfgCoinsPerTk').value);
     const tkPerBlock = parseFloat(document.getElementById('cfgTkPerBlock').value);
-    
     if(!coinsPerTk || coinsPerTk <= 0) return showToast('❌ Coins must be greater than 0', '#ef4444');
     if(!tkPerBlock || tkPerBlock <= 0) return showToast('❌ Tk must be greater than 0', '#ef4444');
     
-    if(!data.config) data.config = {};
-    data.config.coinSystem = {
-      coinsPerTk: coinsPerTk,
-      tkPerCoinsBlock: tkPerBlock
-    };
-    
-    setData(data);
-    loadRatesFromConfig();
+    await db.collection("settings").doc("config").update({ 
+      coinSystem: { coinsPerTk, tkPerCoinsBlock: tkPerBlock }
+    });
     showToast(`✅ Coin rate updated: ${coinsPerTk} Coins = ৳${tkPerBlock}`, '#10b981');
   }
 
   function loadBanners() {
-    const data = getData(); 
     const container = document.getElementById('bannerListContainer');
-    const banners = data.banners || [];
-    
-    if(banners.length === 0) { 
-      container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No banners found. Please add one.</p>'; 
-      return; 
+    if(!MASTER_CONFIG || !MASTER_CONFIG.banners || MASTER_CONFIG.banners.length === 0) { 
+      container.innerHTML = '<p style="text-align:center; color:#6b7280; padding:20px;">No banners found. Please add one.</p>'; return; 
     }
-    
-    container.innerHTML = banners.map((b, i) => `
+    container.innerHTML = MASTER_CONFIG.banners.map((b, i) => `
       <div class="banner-preview" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2});">
-        <div><h4>${b.title}</h4><p>${b.subtitle} | Action: ${b.action}</p></div>
+        <div><h4>${b.title}</h4><p>${b.subtitle} | Action: ${b.action || b.url}</p></div>
         <div style="display:flex; align-items:center; gap:10px;"><span class="icon">${b.icon}</span>
           <button class="btn-sm" style="background:#3b82f6;" onclick="openEditBannerModal(${i})">✏️ Edit</button>
           <button class="btn-sm" style="background:#ef4444;" onclick="deleteBanner(${i})">🗑️ Delete</button>
         </div>
       </div>`).join('');
   }
+  
   function openBannerModal() {
     document.getElementById('bannerModalTitle').innerText = '➕ Add New Banner';
-    document.getElementById('editBannerIdx').value = ''; 
-    document.getElementById('bTitle').value = '';
-    document.getElementById('bSubtitle').value = ''; 
-    document.getElementById('bBtnText').value = '';
-    document.getElementById('bAction').value = 'referModal'; 
-    document.getElementById('bIcon').value = '🎁';
-    document.getElementById('bColor1').value = '#667eea'; 
-    document.getElementById('bColor2').value = '#764ba2';
+    document.getElementById('editBannerIdx').value = ''; document.getElementById('bTitle').value = '';
+    document.getElementById('bSubtitle').value = ''; document.getElementById('bBtnText').value = '';
+    document.getElementById('bAction').value = 'referModal'; document.getElementById('bIcon').value = '🎁';
+    document.getElementById('bColor1').value = '#667eea'; document.getElementById('bColor2').value = '#764ba2';
+    document.getElementById('bUrl').value = '';
     document.getElementById('bannerModal').classList.add('active');
   }
+  
   function openEditBannerModal(idx) {
-    const data = getData(); 
-    const b = data.banners[idx]; 
-    if(!b) return;
+    const b = MASTER_CONFIG.banners[idx]; if(!b) return;
     document.getElementById('bannerModalTitle').innerText = '✏️ Edit Banner';
-    document.getElementById('editBannerIdx').value = idx; 
-    document.getElementById('bTitle').value = b.title;
-    document.getElementById('bSubtitle').value = b.subtitle; 
-    document.getElementById('bBtnText').value = b.btnText || '';
-    document.getElementById('bAction').value = b.action; 
+    document.getElementById('editBannerIdx').value = idx; document.getElementById('bTitle').value = b.title;
+    document.getElementById('bSubtitle').value = b.subtitle; document.getElementById('bBtnText').value = b.btnText || '';
+    document.getElementById('bAction').value = b.url ? 'url' : b.action; 
+    document.getElementById('bUrl').value = b.url || '';
     document.getElementById('bIcon').value = b.icon;
-    document.getElementById('bColor1').value = b.color1; 
-    document.getElementById('bColor2').value = b.color2;
+    document.getElementById('bColor1').value = b.color1; document.getElementById('bColor2').value = b.color2;
     document.getElementById('bannerModal').classList.add('active');
   }
+  
   function closeBannerModal() { document.getElementById('bannerModal').classList.remove('active'); }
-  function saveBanner() {
-    const data = getData(); 
+  
+  async function saveBanner() {
     const idx = document.getElementById('editBannerIdx').value;
+    const action = document.getElementById('bAction').value;
+    const url = document.getElementById('bUrl').value.trim();
+    
     const bannerObj = {
       title: document.getElementById('bTitle').value.trim(), 
       subtitle: document.getElementById('bSubtitle').value.trim(),
       btnText: document.getElementById('bBtnText').value.trim(), 
-      action: document.getElementById('bAction').value,
+      action: action === 'url' ? '' : action,
+      url: action === 'url' ? url : '',
       icon: document.getElementById('bIcon').value, 
       color1: document.getElementById('bColor1').value, 
       color2: document.getElementById('bColor2').value
     };
     if(!bannerObj.title || !bannerObj.subtitle) return showToast('Title and Subtitle are required!', '#ef4444');
     
-    if(!data.banners) data.banners = [];
-    if(idx !== '') { 
-      data.banners[idx] = bannerObj; 
-      showToast('✅ Banner updated successfully!', '#10b981'); 
-    } else { 
-      data.banners.push(bannerObj); 
-      showToast('✅ New Banner added!', '#10b981'); 
-    }
-    setData(data); 
-    closeBannerModal(); 
-    loadBanners();
+    let banners = MASTER_CONFIG.banners || [];
+    if(idx !== '') banners[idx] = bannerObj; 
+    else banners.push(bannerObj); 
+    
+    await db.collection("settings").doc("config").update({ banners: banners });
+    closeBannerModal(); showToast('✅ Banner saved!', '#10b981');
   }
-  function deleteBanner(idx) {
-    if(!confirm('Are you sure you want to delete this banner?')) return;
-    const data = getData(); 
-    data.banners.splice(idx, 1); 
-    setData(data); 
-    loadBanners(); 
+  
+  async function deleteBanner(idx) {
+    if(!confirm('Are you sure?')) return;
+    let banners = MASTER_CONFIG.banners;
+    banners.splice(idx, 1); 
+    await db.collection("settings").doc("config").update({ banners: banners });
     showToast('🗑️ Banner deleted!', '#ef4444');
   }
 
   function loadFraudSettings() {
-    const f = (getData().config && getData().config.fraud) || {};
-    document.getElementById('fraudVpnBlock').checked = f.vpnBlock || false;
-    document.getElementById('fraudForceAd').checked = f.forceAd || false;
+    if(!MASTER_CONFIG || !MASTER_CONFIG.fraud) return;
+    const f = MASTER_CONFIG.fraud;
+    
+    document.getElementById('fraudVpnBlock').checked = f.vpnBlock === true;
+    document.getElementById('fraudForceAd').checked = f.forceAd !== false;
     document.getElementById('fraudDeviceBlock').checked = f.deviceBlock !== false;
     document.getElementById('fraudIpBlock').checked = f.ipBlock !== false;
     document.getElementById('fraudMaxIp').value = f.maxAccountsPerIp || 1;
     document.getElementById('fraudMaxWithdraw').value = f.maxWithdraw || 1000;
-    document.getElementById('fraudSpamTimer').value = f.spamTimer || 5;
+    document.getElementById('fraudBotDetect').checked = f.botDetect !== false;
+    document.getElementById('fraudBotClickInterval').value = f.botClickInterval || 300;
   }
-  function saveFraudSettings() {
-    const data = getData();
-    if(!data.config) data.config = {};
-    data.config.fraud = {
+  
+  async function saveFraudSettings() {
+    let fraud = {
       vpnBlock: document.getElementById('fraudVpnBlock').checked,
       forceAd: document.getElementById('fraudForceAd').checked, 
       deviceBlock: document.getElementById('fraudDeviceBlock').checked,
       ipBlock: document.getElementById('fraudIpBlock').checked,
       maxAccountsPerIp: +document.getElementById('fraudMaxIp').value || 1,
       maxWithdraw: +document.getElementById('fraudMaxWithdraw').value || 1000, 
-      spamTimer: +document.getElementById('fraudSpamTimer').value || 0
+      botDetect: document.getElementById('fraudBotDetect').checked,
+      botClickInterval: +document.getElementById('fraudBotClickInterval').value || 300
     };
-    setData(data); 
-    showToast('🛡️ Fraud Settings Saved & Now Live on User App!', '#10b981');
+    await db.collection("settings").doc("config").update({ fraud: fraud });
+    showToast('🛡️ Fraud Settings Saved Successfully!', '#10b981');
   }
 
   function loadNotifUsers() {
-    const data = getData(); 
     const select = document.getElementById('notifUserSelect');
-    select.innerHTML = (data.users || []).map(u => `<option value="${u.id}">${u.name} (${u.phone})</option>`).join('');
+    select.innerHTML = ALL_USERS.map(u => `<option value="${u.id}">${u.name} (${u.phone})</option>`).join('');
   }
-  function sendNotification() {
-    const data = getData(); 
-    const userId = +document.getElementById('notifUserSelect').value;
+  
+  async function sendNotification() {
+    const userId = document.getElementById('notifUserSelect').value;
     const msg = document.getElementById('notifMsg').value;
     if(!msg) return showToast('Please type a message', '#ef4444');
-    
-    const user = data.users.find(u => u.id === userId); 
-    if(!user) return showToast('User not found!', '#ef4444');
+    const user = ALL_USERS.find(u => u.id === userId); if(!user) return showToast('User not found!', '#ef4444');
     
     const now = new Date();
     const dateTimeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
     
-    user.notifications = Array.isArray(user.notifications) ? user.notifications : Object.values(user.notifications || {});
-    user.notifications.push({ id: Date.now(), msg: msg, date: dateTimeStr });
-    
-    setData(data); 
+    await db.collection("users").doc(userId).update({
+      notifications: firebase.firestore.FieldValue.arrayUnion({ id: Date.now(), msg: msg, date: dateTimeStr })
+    });
     document.getElementById('notifMsg').value = ''; 
     showToast(`📢 Notification sent to ${user.name}!`, '#10b981');
   }
 
-  function sendNotificationToAll() {
-    const data = getData();
+  async function sendNotificationToAll() {
     const msg = document.getElementById('notifAllMsg').value.trim();
-    
     if(!msg) return showToast('Please type a message', '#ef4444');
-    if(!data.users || data.users.length === 0) return showToast('No users found!', '#ef4444');
+    if(ALL_USERS.length === 0) return showToast('No users found!', '#ef4444');
 
     const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    let hours = now.getHours();
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const dateTimeStr = `${day}/${month}/${year}, ${hours}:${minutes} ${ampm}`;
-
+    const dateTimeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    
+    const batch = db.batch();
     let count = 0;
-    data.users.forEach(user => {
-      user.notifications = Array.isArray(user.notifications) ? user.notifications : Object.values(user.notifications || {});
-      user.notifications.push({ 
-        id: Date.now() + Math.random(), 
-        msg: msg, 
-        date: dateTimeStr 
+    ALL_USERS.forEach(user => {
+      const userRef = db.collection("users").doc(user.id);
+      batch.update(userRef, {
+        notifications: firebase.firestore.FieldValue.arrayUnion({ id: Date.now() + Math.random(), msg: msg, date: dateTimeStr })
       });
       count++;
     });
-
-    setData(data);
+    
+    await batch.commit();
     document.getElementById('notifAllMsg').value = '';
     showToast(`📢 Notification sent to all ${count} users!`, '#10b981');
   }
@@ -1507,18 +1447,8 @@
     if(newPass.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!', '#ef4444');
     if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!', '#ef4444');
     localStorage.setItem('admin_password', newPass);
-    document.getElementById('oldPass').value = ''; 
-    document.getElementById('newPass').value = ''; 
-    document.getElementById('confirmAdminPass').value = '';
+    document.getElementById('oldAdminPass').value = ''; document.getElementById('newAdminPass').value = ''; document.getElementById('confirmAdminPass').value = '';
     showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!', '#10b981');
-  }
-
-  function clearAllData() {
-    if(confirm('Are you absolutely sure? This will delete all data permanently from Firebase?')) {
-      db.ref('master_db').set({ users: [], config: defaultConfig, banners: defaultBanners, activityLogs: [] });
-      showToast('All data cleared! Reloading...', '#ef4444');
-      setTimeout(() => location.reload(), 1500);
-    }
   }
 </script>
 </body>
