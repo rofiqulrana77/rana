@@ -2,12 +2,15 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Earning App</title>
-
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rocket Earning App</title>
+<!-- ✅ Telegram Mini App SDK -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- ✅ Adsgram SDK (Rewarded Video) -->
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<!-- ✅ Firebase SDK (v9 Compat for ease) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
   :root {
@@ -15,55 +18,151 @@
     --card-bg: #ffffff;
     --text-main: #333333;
     --text-sub: #888888;
-    --header-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --input-bg: #ffffff;
     --modal-overlay: rgba(0,0,0,0.6);
+    --header-grad: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    --refer-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --visit-grad: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);
   }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); padding-bottom: 70px; overflow-x: hidden; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-  body { background: var(--bg); padding-bottom: 70px; }
-
-  #authScreen {
-    position: fixed; inset: 0; background: var(--bg);
+  /* ✅ SPLASH ANIMATION CSS */
+  #splashScreen {
+    position: fixed; inset: 0; background: #111827; z-index: 99999;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 5000; padding: 20px;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+    overflow: hidden;
   }
-  .auth-card {
-    background: var(--card-bg); padding: 30px; border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px;
-    text-align: center; color: var(--text-main);
+  #splashScreen.hidden {
+    opacity: 0;
+    visibility: hidden;
   }
-  .auth-card h2 { font-size: 24px; color: #667eea; margin-bottom: 5px; }
+  .splash-rocket {
+    font-size: 90px;
+    position: relative;
+    animation: launch 2.5s ease-in-out infinite;
+    z-index: 2;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+  }
+  .splash-title {
+    color: white;
+    font-size: 28px;
+    font-weight: 900;
+    margin-top: 20px;
+    letter-spacing: 1.5px;
+    animation: pulseText 2s ease-in-out infinite;
+    z-index: 2;
+    text-transform: uppercase;
+  }
+  .splash-subtitle {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-top: 8px;
+    letter-spacing: 1px;
+    z-index: 2;
+    animation: fadeInSub 2s ease-in-out infinite alternate;
+  }
+  /* Background Stars */
+  .splash-stars {
+    position: absolute; inset: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0,0,0,0));
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: starsMove 8s linear infinite;
+    opacity: 0.7;
+  }
+  .splash-exhaust {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 180px;
+    background: linear-gradient(to top, transparent, #f59e0b, #ef4444);
+    filter: blur(12px);
+    border-radius: 50%;
+    animation: exhaust 2.5s ease-in-out infinite;
+    z-index: 1;
+  }
+  .loading-bar-container {
+    margin-top: 40px;
+    width: 200px;
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .loading-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899);
+    border-radius: 10px;
+    animation: loadProgress 3.5s ease-in-out forwards;
+  }
+
+  @keyframes launch {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-20px) scale(1.05); }
+  }
+  @keyframes pulseText {
+    0%, 100% { opacity: 1; text-shadow: 0 0 15px rgba(255,255,255,0.5); }
+    50% { opacity: 0.9; text-shadow: 0 0 30px rgba(102,126,234,0.9); }
+  }
+  @keyframes fadeInSub {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+  @keyframes starsMove {
+    from { background-position: 0 0; }
+    to { background-position: 0 200px; }
+  }
+  @keyframes exhaust {
+    0%, 100% { height: 120px; opacity: 0.8; }
+    50% { height: 200px; opacity: 1; }
+  }
+  @keyframes loadProgress {
+    0% { width: 0%; }
+    40% { width: 45%; }
+    70% { width: 80%; }
+    100% { width: 100%; }
+  }
+
+  #authScreen { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5000; padding: 20px; }
+  .auth-card { background: var(--card-bg); padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; color: var(--text-main); }
+  .auth-card h2 { font-size: 24px; color: #4f46e5; margin-bottom: 5px; }
   .auth-card p { font-size: 13px; color: var(--text-sub); margin-bottom: 20px; }
   .auth-card input { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 2px solid #e0e0e0; border-radius: 10px; margin: 8px 0; font-size: 14px; }
-  .auth-card button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+  .auth-card button { width: 100%; padding: 12px; background: var(--header-grad); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; }
   .auth-switch { margin-top: 15px; font-size: 13px; color: var(--text-sub); }
-  .auth-switch span { color: #667eea; cursor: pointer; font-weight: bold; }
-  
-  #mainApp { display: none; } 
-  
-  .header { background: var(--header-grad); color: white; padding: 20px; border-radius: 0 0 25px 25px; display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+  .auth-switch span { color: #4f46e5; cursor: pointer; font-weight: bold; }
+
+  #mainApp { display: none; }
+  .header { background: var(--header-grad); padding: 22px 20px; border-radius: 0 0 25px 25px; color: white; position: relative; z-index: 5; box-shadow: 0 5px 15px rgba(79, 70, 229, 0.25); display: flex; justify-content: space-between; align-items: center; }
   .header-left { display: flex; align-items: center; gap: 15px; }
-  .avatar { width: 65px; height: 65px; border-radius: 50%; border: 3px solid white; object-fit: cover; background: #fff; }
-  .user-info h3 { font-size: 18px; }
-  .user-info p { font-size: 12px; opacity: 0.9; }
-  
-  .header-right { display: flex; gap: 10px; }
-  .icon-btn { position: relative; cursor: pointer; font-size: 22px; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 75px; height: 75px; border-radius: 50%; border: 3px solid white; object-fit: cover; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .user-details { display: flex; flex-direction: column; }
+  .welcome-text { font-size: 11px; font-weight: 600; color: #e0e7ff; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .user-info h3 { font-size: 22px; font-weight: 800; margin-bottom: 5px; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .balance-container { display: flex; flex-direction: column; margin-top: 2px; }
+  .balance-label { font-size: 12px; color: #e0e7ff; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; margin-bottom: 4px; }
+  .balance-values { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .balance-values .coin-val { color: #fef08a; font-size: 26px; font-weight: 900; text-shadow: 0 1px 4px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 6px; }
+  .balance-values .tk-val { color: #e0e7ff; font-size: 18px; font-weight: 800; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .icon-btn { position: relative; cursor: pointer; font-size: 24px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 50%; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
   .icon-btn:active { transform: scale(0.9); }
-  .notif-badge { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; background: #ff4757; border-radius: 50%; border: 2px solid #764ba2; display: none; }
-  
-  .balance-card { background: var(--card-bg); margin: -20px 15px 15px; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; position: relative; z-index: 10; }
-  .balance-card .coin-display { color: #f59e0b; font-size: 34px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .balance-card .coin-display .coin-icon { font-size: 30px; }
-  .balance-card .tk-display { color: #667eea; font-size: 16px; font-weight: 600; margin-top: 5px; }
-  .balance-card p { color: var(--text-sub); font-size: 12px; margin-top: 5px; }
-  
-  .banner-slider { margin: 15px 15px 20px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; height: 140px; touch-action: pan-y; }
+  .notif-badge { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; background: #ff4757; border-radius: 50%; border: 2px solid #7c3aed; display: none; }
+
+  .banner-slider { margin: 8px 12px 12px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; height: 140px; touch-action: pan-y; }
   .banner-track { display: flex; height: 100%; transition: transform 0.4s ease-in-out; width: 100%; }
   .banner-slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between; padding: 20px; color: white; position: relative; overflow: hidden; }
-  .banner-slide::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
-  .banner-slide::after { content: ''; position: absolute; bottom: -30%; right: 10%; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; }
   .banner-slide-content { position: relative; z-index: 2; flex: 1; }
   .banner-slide-content h3 { font-size: 16px; margin-bottom: 5px; font-weight: 700; }
   .banner-slide-content p { font-size: 12px; opacity: 0.9; margin-bottom: 10px; }
@@ -72,118 +171,147 @@
   .banner-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 5; }
   .banner-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.5); cursor: pointer; transition: 0.3s; }
   .banner-dot.active { background: white; width: 20px; border-radius: 4px; }
-  
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 15px; }
-  .card { background: var(--card-bg); padding: 18px 10px; border-radius: 15px; text-align: center; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.07); transition: transform 0.2s; }
-  .card:active { transform: scale(0.95); }
-  .card .icon { font-size: 30px; margin-bottom: 8px; }
-  .card .title { font-size: 13px; font-weight: 600; color: var(--text-main); }
-  .card .sub { font-size: 10px; color: var(--text-sub); margin-top: 3px; }
-  
+
+  .rocket-section { margin: 0 12px 12px; border-radius: 16px; padding: 16px; color: white; position: relative; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+  .rocket-section::after { content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; background: rgba(255,255,255,0.12); border-radius: 50%; }
+  .rocket-header { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; margin-bottom: 10px; }
+  .rocket-header h3 { font-size: 18px; font-weight: 800; letter-spacing: 0.3px; }
+  .rocket-header .rocket-badge { background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; backdrop-filter: blur(5px); }
+  .rocket-desc { font-size: 12px; opacity: 0.92; margin-bottom: 14px; position: relative; z-index: 2; line-height: 1.4; }
+  .start-now-btn { background: white; color: #333; border: none; padding: 11px 20px; border-radius: 25px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: inline-flex; align-items: center; gap: 6px; position: relative; z-index: 2; transition: transform 0.2s; }
+  .start-now-btn:active { transform: scale(0.95); }
+  .start-now-btn:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; box-shadow: none; }
+
+  .rocket-1 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+  .rocket-1::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+  .rocket-2 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+  .rocket-2::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+  .rocket-3 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+  .rocket-3::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+  .rocket-4 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+  .rocket-4::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+  .rocket-5 { background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); }
+  .rocket-5::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+  .rocket-6 { background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%); }
+  .rocket-6::before { content: '🚀'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-25deg); }
+
+  .daily-claim-section { background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); }
+  .daily-claim-section::before { content: '🎁'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.18; transform: rotate(-20deg); }
+  .visit-section { background: var(--visit-grad); }
+  .visit-section::before { content: '🌐'; position: absolute; right: -15px; bottom: -20px; font-size: 110px; opacity: 0.2; transform: rotate(-15deg); }
+
+  .refer-section { margin: 0 12px 12px; background: var(--refer-grad); border-radius: 14px; padding: 12px 14px; color: white; box-shadow: 0 6px 18px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden; cursor: pointer; transition: transform 0.2s ease; display: flex; align-items: center; justify-content: space-between; }
+  .refer-section:active { transform: scale(0.98); }
+  .refer-text { position: relative; z-index: 2; flex: 1; }
+  .refer-text h3 { font-size: 15px; margin-bottom: 3px; font-weight: bold; }
+  .refer-text p { font-size: 11px; opacity: 0.9; line-height: 1.35; }
+  .refer-btn { background: white; color: #4f46e5; border: none; padding: 8px 14px; border-radius: 22px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 4px; white-space: nowrap; position: relative; z-index: 2; }
+
   .modal { display: none; position: fixed; inset: 0; background: var(--modal-overlay); z-index: 1000; padding: 20px; overflow-y: auto; }
   .modal.active { display: block; }
   .modal-content { background: var(--card-bg); border-radius: 20px; padding: 20px; max-width: 450px; margin: 30px auto; position: relative; animation: slideUp 0.3s; }
   @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .close-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: #ff4757; color: white; border: none; font-size: 18px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; }
-  .modal h3 { margin-bottom: 15px; color: var(--text-main); }
-  
-  .btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+  .modal h3 { margin-bottom: 15px; color: var(--text-main); text-align: center; }
+  .btn { background: var(--header-grad); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 10px; }
   .btn:disabled { background: #ccc; cursor: not-allowed; }
   .btn-green { background: linear-gradient(135deg, #11998e, #38ef7d); }
-  
-  .wheel-container { position: relative; width: 250px; height: 250px; margin: 20px auto; }
-  .wheel { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #667eea; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99); background: conic-gradient(#ff6b6b 0deg 45deg, #4ecdc4 45deg 90deg, #ffe66d 90deg 135deg, #a8e6cf 135deg 180deg, #ff6b6b 180deg 225deg, #4ecdc4 225deg 270deg, #ffe66d 270deg 315deg, #a8e6cf 315deg 360deg); }
-  .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); font-size: 30px; color: #ff4757; z-index: 10; }
-  .spin-result { text-align: center; font-size: 16px; font-weight: bold; color: #667eea; margin-top: 10px; min-height: 24px; }
-  
-  .scratch-box { width: 250px; height: 150px; margin: 15px auto; border-radius: 12px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: bold; cursor: pointer; user-select: none; transition: 0.3s; }
-  .scratch-box.revealed { background: #38ef7d; }
-  
-  .quiz-q { font-size: 20px; font-weight: bold; text-align: center; margin: 15px 0; color: var(--text-main); }
-  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .quiz-opt { padding: 12px; background: #f0f2f5; color: #333; border-radius: 10px; text-align: center; cursor: pointer; font-weight: 600; border: 2px solid transparent; }
-  .quiz-opt.correct { background: #38ef7d; color: white; }
-  .quiz-opt.wrong { background: #ff4757; color: white; }
-  
-  .captcha-box { background: #f0f2f5; color: #333; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 5px; border-radius: 10px; margin: 15px 0; font-style: italic; text-decoration: line-through; user-select: none; }
-  
+
   input[type="text"], input[type="tel"], input[type="email"], input[type="number"], input[type="password"] { width: 100%; padding: 12px; background: var(--input-bg); color: var(--text-main); border: 2px solid #e0e0e0; border-radius: 10px; margin: 8px 0; font-size: 14px; }
-  
+
   .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; color: #333; }
-  .list-item button { background: #667eea; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+  .list-item button { background: #4f46e5; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 12px; }
   .list-item button:disabled { background: #ccc; cursor: not-allowed; }
-  
+
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); display: flex; justify-content: space-around; padding: 10px 0; box-shadow: 0 -3px 15px rgba(0,0,0,0.1); z-index: 100; }
   .nav-item { text-align: center; color: var(--text-sub); font-size: 10px; cursor: pointer; flex: 1; }
   .nav-item .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
-  .nav-item.active { color: #667eea; }
-  
+  .nav-item.active { color: #4f46e5; }
+
   .withdraw-option { padding: 15px; background: #f8f9fa; color: #333; border-radius: 10px; margin: 8px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e0e0e0; }
-  .withdraw-option.selected { background: #667eea; color: white; border-color: #667eea; }
+  .withdraw-option.selected { background: #4f46e5; color: white; border-color: #4f46e5; }
   .withdraw-option .method-info { display: flex; align-items: center; gap: 10px; font-weight: 500; }
   .w-logo { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; background: white; padding: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  
+
   .history-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 13px; color: var(--text-main); }
   .status { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: bold; }
   .status.pending { background: #ffeaa7; color: #d63031; }
   .status.confirm { background: #55efc4; color: #00b894; }
   .status.rejected { background: #ff7675; color: white; }
-  
+
   .lb-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8f9fa; border-radius: 10px; margin: 8px 0; transition: 0.3s; color: #333; }
-  .lb-item.me { background: #e3f2fd; border: 2px solid #667eea; transform: scale(1.02); box-shadow: 0 4px 10px rgba(102,126,234,0.2); }
+  .lb-item.me { background: #e0e7ff; border: 2px solid #4f46e5; transform: scale(1.02); box-shadow: 0 4px 10px rgba(79,70,229,0.2); }
   .lb-rank { font-size: 20px; font-weight: bold; width: 30px; text-align: center; }
   .lb-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
   .lb-info { flex: 1; }
   .lb-info h4 { font-size: 14px; }
-  .lb-info h4 span { font-size: 10px; background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+  .lb-info h4 span { font-size: 10px; background: #4f46e5; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
   .lb-info p { font-size: 11px; color: #888; }
   .lb-amount { font-weight: bold; color: #f59e0b; font-size: 14px; }
-  
+
   .profile-photo-container { text-align: center; margin: 15px 0; }
-  .profile-photo-container img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #667eea; object-fit: cover; }
-  
-  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; }
+  .profile-photo-container img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #4f46e5; object-fit: cover; }
+
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; z-index: 9999; font-size: 14px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); opacity: 0; transition: all 0.4s ease; pointer-events: none; white-space: nowrap; max-width: 90%; text-align: center; }
   .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-  
+
   #webViewModal { background: var(--card-bg); z-index: 2000; padding: 0; display: none; flex-direction: column; position: fixed; inset: 0; width: 100%; height: 100vh; }
   #webViewModal.active { display: flex; }
   .webview-header { background: var(--card-bg); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; font-size: 16px; font-weight: bold; color: var(--text-main); }
-  .webview-header .title { display: flex; align-items: center; gap: 8px; }
   .webview-timer { color: #ff4757; background: #ffeaa7; padding: 6px 15px; border-radius: 20px; font-weight: bold; font-size: 15px; }
-  .webview-close { width: 30px; height: 30px; background: #ff4757; color: white; border: none; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   .webview-iframe { flex: 1; width: 100%; border: none; height: 100%; }
-  
-  .ad-video-container { width: 100%; background: #000; border-radius: 10px; overflow: hidden; position: relative; margin: 15px 0; border: 2px solid #333; }
-  .ad-video-container iframe { width: 100%; height: 200px; border: none; display: block; }
-  .ad-timer-badge { position: absolute; top: 10px; right: 10px; background: rgba(255, 71, 87, 0.9); color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-  
+
   .policy-box { background: #f8f9fa; color: #444; border-radius: 10px; padding: 15px; font-size: 13px; line-height: 1.6; max-height: 300px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #e0e0e0; }
-  .policy-box h4 { color: #667eea; margin: 10px 0 5px; font-size: 14px; }
+  .policy-box h4 { color: #4f46e5; margin: 10px 0 5px; font-size: 14px; }
   .policy-box p { margin-bottom: 8px; }
   .policy-box ul { margin-left: 20px; margin-bottom: 8px; }
   .policy-box li { margin-bottom: 5px; }
-  
+
   .logout-btn { background: linear-gradient(135deg, #ff4757, #ff6b81); color: white; border: none; padding: 12px 20px; border-radius: 10px; width: 100%; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 15px; }
-  .join-date-badge { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 5px; }
-  
+  .join-date-badge { background: #e0e7ff; color: #3730a3; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-top: 5px; }
   .change-pass-box { background: #fff3cd; border: 1px solid #ffeeba; border-radius: 10px; padding: 15px; margin-top: 15px; }
   .change-pass-box h4 { color: #856404; margin-bottom: 10px; font-size: 14px; }
-  
-  .notif-item { background: #f8f9fa; color: #333; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea; font-size: 13px; }
+  .notif-item { background: #f8f9fa; color: #333; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #4f46e5; font-size: 13px; }
   .notif-item .time { font-size: 11px; color: #666; margin-top: 6px; display: block; font-weight: 500; }
-  
   .ref-banner { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 10px; border-radius: 10px; text-align: center; font-size: 12px; font-weight: bold; margin-bottom: 15px; }
-
   .reward-coin { color: #f59e0b; font-weight: bold; }
-
   .withdraw-balance-box { background: #fef3c7; padding: 12px; border-radius: 10px; margin-bottom: 12px; text-align: center; }
   .withdraw-balance-box .balance-row { font-size: 13px; color: #92400e; font-weight: bold; }
   .withdraw-balance-box .rate-row { font-size: 11px; color: #78350f; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #f59e0b; font-weight: 600; }
+
+  .rocket-start-cta { text-align: center; padding: 10px 0 5px; }
+  .rocket-start-cta .big-rocket { font-size: 60px; margin-bottom: 10px; animation: floatRocket 2s ease-in-out infinite; }
+  @keyframes floatRocket { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .rocket-start-cta h4 { font-size: 18px; color: #333; margin-bottom: 6px; }
+  .rocket-start-cta p { font-size: 12px; color: #888; margin-bottom: 15px; line-height: 1.5; }
+
+  .daily-claim-cta { text-align: center; padding: 10px 0 5px; }
+  .daily-claim-cta .big-gift { font-size: 70px; margin-bottom: 10px; animation: pulseGift 1.5s ease-in-out infinite; }
+  @keyframes pulseGift { 0%,100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.15) rotate(5deg); } }
+  .daily-claim-cta h4 { font-size: 18px; color: #333; margin-bottom: 6px; }
+  .daily-claim-cta p { font-size: 12px; color: #888; margin-bottom: 15px; line-height: 1.5; }
+
+  .visit-cta { text-align: center; padding: 10px 0 5px; }
+  .visit-cta .big-globe { font-size: 60px; margin-bottom: 10px; animation: spinGlobe 3s linear infinite; }
+  @keyframes spinGlobe { 0% { transform: rotateY(0deg); } 100% { transform: rotateY(360deg); } }
+  .visit-cta h4 { font-size: 18px; color: #333; margin-bottom: 6px; }
+  .visit-cta p { font-size: 12px; color: #888; margin-bottom: 15px; line-height: 1.5; }
 </style>
 </head>
 <body>
 
-<div id="authScreen">
+<!-- ✅ SPLASH SCREEN ANIMATION -->
+<div id="splashScreen">
+  <div class="splash-stars"></div>
+  <div class="splash-exhaust"></div>
+  <div class="splash-rocket">🚀</div>
+  <div class="splash-title">Rocket Earning</div>
+  <div class="splash-subtitle">Loading your earnings...</div>
+  <div class="loading-bar-container">
+    <div class="loading-bar"></div>
+  </div>
+</div>
+
+<div id="authScreen" style="display:none;">
   <div class="auth-card" id="loginForm">
     <h2>Welcome Back!</h2>
     <p>Login to your account to continue</p>
@@ -192,7 +320,6 @@
     <button onclick="handleLogin()">Login Now</button>
     <div class="auth-switch">Don't have an account? <span onclick="switchAuth('register')">Register Here</span></div>
   </div>
-
   <div class="auth-card" id="registerForm" style="display:none;">
     <h2>Create Account</h2>
     <p>Join us and start earning today</p>
@@ -207,19 +334,25 @@
   </div>
 </div>
 
-<div id="mainApp">
+<div id="mainApp" style="display:none;">
   <div class="header">
     <div class="header-left">
-      <img src="https://ui-avatars.com/api/?name=User&background=fff&color=667eea" class="avatar" id="headerAvatar" alt="Profile">
-      <div class="user-info"><h3 id="headerName">User</h3><p id="headerPhone">+880 1XXXXXXXXX</p></div>
+      <img src="https://ui-avatars.com/api/?name=User&background=fff&color=4f46e5" class="avatar" id="headerAvatar" alt="Profile">
+      <div class="user-details">
+        <div class="welcome-text">Welcome,</div>
+        <div class="user-info"><h3 id="headerName">User</h3></div>
+        <div class="balance-container">
+          <span class="balance-label">Available Balance</span>
+          <div class="balance-values">
+            <span class="coin-val">🪙 <span id="coinDisplay">0</span></span>
+            <span class="tk-val">(≈ ৳<span id="tkDisplay">0.00</span>)</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="header-right"><div class="icon-btn" onclick="openNotifModal()">🔔<div class="notif-badge" id="notifBadge"></div></div></div>
-  </div>
-
-  <div class="balance-card">
-    <div class="coin-display"><span class="coin-icon">🪙</span><span id="coinDisplay">0</span></div>
-    <div class="tk-display">≈ ৳<span id="tkDisplay">0.00</span></div>
-    <p>Your Available Balance</p>
+    <div class="header-right">
+      <div class="icon-btn" onclick="openNotifModal()">🔔<div class="notif-badge" id="notifBadge"></div></div>
+    </div>
   </div>
 
   <div class="banner-slider" id="bannerSlider">
@@ -227,17 +360,58 @@
     <div class="banner-dots" id="bannerDots"></div>
   </div>
 
-  <div class="grid" id="mainGrid">
-    <div class="card" onclick="openModal('dailyClaimModal')"><div class="icon">🎁</div><div class="title">Daily Claim</div><div class="sub" id="dailyClaimStatus">Available</div></div>
-    <div class="card" onclick="openModal('wheelModal')"><div class="icon">🎡</div><div class="title">Lucky Spin</div><div class="sub" id="wheelStatus">10 left today</div></div>
-    <div class="card" onclick="openModal('scratchModal')"><div class="icon">🎫</div><div class="title">Scratch Card</div><div class="sub" id="scratchStatus">10 left today</div></div>
-    <div class="card" onclick="openModal('quizModal')"><div class="icon">🧮</div><div class="title">Math Quiz</div><div class="sub" id="quizStatus">10 left today</div></div>
-    <div class="card" onclick="openModal('captchaModal')"><div class="icon">🔐</div><div class="title">Captcha Solver</div><div class="sub" id="captchaStatus">10 left today</div></div>
-    <div class="card" onclick="openModal('visitModal')"><div class="icon">🌐</div><div class="title">Visit Website</div><div class="sub" id="visitStatus">10 links · 1 min</div></div>
-    <div class="card" onclick="openModal('videoModal')"><div class="icon">📺</div><div class="title">Watch Video</div><div class="sub" id="videoStatus">10 links · 1 min</div></div>
-    <div class="card" onclick="openModal('withdrawModal')"><div class="icon">💸</div><div class="title">Withdraw</div><div class="sub">Min 500 Coins</div></div>
-    <div class="card" onclick="openModal('leaderboardModal')"><div class="icon">🏆</div><div class="title">Leaderboard</div><div class="sub">Top earners</div></div>
-    <div class="card" onclick="openModal('referModal')"><div class="icon">🔗</div><div class="title">Refer</div><div class="sub" id="referStatus">0 refer</div></div>
+  <div class="rocket-section daily-claim-section" onclick="openModal('dailyClaimModal')">
+    <div class="rocket-header">
+      <h3>🎁 Daily Claim</h3>
+      <span class="rocket-badge" id="dailyClaimBadge">Available</span>
+    </div>
+    <p class="rocket-desc">প্রতিদিন ফ্রি কয়েন সংগ্রহ করুন! <span id="dailyClaimInlineStatus">আজ ক্লেইম করুন</span></p>
+    <button class="start-now-btn" id="dailyClaimStartBtn" onclick="event.stopPropagation(); openModal('dailyClaimModal');">Claim Now ➔</button>
+  </div>
+
+  <div class="rocket-section rocket-1" onclick="openRocketModal(1)">
+    <div class="rocket-header"><h3>🚀 Rocket 1</h3><span class="rocket-badge" id="badgeRocket1">10 left</span></div>
+    <p class="rocket-desc">দ্রুত ইনকাম শুরু করুন। এখনই ক্লিক করুন!</p>
+    <button class="start-now-btn" id="rocket1Btn" onclick="event.stopPropagation(); openRocketModal(1);">Start Now ➔</button>
+  </div>
+  <div class="rocket-section rocket-2" onclick="openRocketModal(2)">
+    <div class="rocket-header"><h3>🚀 Rocket 2</h3><span class="rocket-badge" id="badgeRocket2">10 left</span></div>
+    <p class="rocket-desc">আরও বেশি কয়েন আর্ন করুন সহজেই।</p>
+    <button class="start-now-btn" id="rocket2Btn" onclick="event.stopPropagation(); openRocketModal(2);">Start Now ➔</button>
+  </div>
+  <div class="rocket-section rocket-3" onclick="openRocketModal(3)">
+    <div class="rocket-header"><h3>🚀 Rocket 3</h3><span class="rocket-badge" id="badgeRocket3">10 left</span></div>
+    <p class="rocket-desc">প্রিমিয়াম টাস্কে যোগ দিন এবং জিতুন।</p>
+    <button class="start-now-btn" id="rocket3Btn" onclick="event.stopPropagation(); openRocketModal(3);">Start Now ➔</button>
+  </div>
+  <div class="rocket-section rocket-4" onclick="openRocketModal(4)">
+    <div class="rocket-header"><h3>🚀 Rocket 4</h3><span class="rocket-badge" id="badgeRocket4">10 left</span></div>
+    <p class="rocket-desc">সর্বোচ্চ লেভেলের এক্সক্লুসিভ ইনকাম!</p>
+    <button class="start-now-btn" id="rocket4Btn" onclick="event.stopPropagation(); openRocketModal(4);">Start Now ➔</button>
+  </div>
+  <div class="rocket-section rocket-5" onclick="openRocketModal(5)">
+    <div class="rocket-header"><h3>🚀 Rocket 5</h3><span class="rocket-badge" id="badgeRocket5">10 left</span></div>
+    <p class="rocket-desc">মেগা রিওয়ার্ড টাস্ক! এখনই শুরু করুন।</p>
+    <button class="start-now-btn" id="rocket5Btn" onclick="event.stopPropagation(); openRocketModal(5);">Start Now ➔</button>
+  </div>
+  <div class="rocket-section rocket-6" onclick="openRocketModal(6)">
+    <div class="rocket-header"><h3>🚀 Rocket 6</h3><span class="rocket-badge" id="badgeRocket6">10 left</span></div>
+    <p class="rocket-desc">আল্টিমেট লেভেলের ইনকাম! আজই ট্রাই করুন।</p>
+    <button class="start-now-btn" id="rocket6Btn" onclick="event.stopPropagation(); openRocketModal(6);">Start Now ➔</button>
+  </div>
+
+  <div class="rocket-section visit-section" onclick="openModal('visitModal')">
+    <div class="rocket-header"><h3>🌐 Visit Website</h3><span class="rocket-badge" id="visitBadge">10 left</span></div>
+    <p class="rocket-desc">ওয়েবসাইট ভিজিট করে সহজেই কয়েন আর্ন করুন!</p>
+    <button class="start-now-btn" onclick="event.stopPropagation(); openModal('visitModal');">Visit Now ➔</button>
+  </div>
+
+  <div class="refer-section" onclick="openModal('referModal')">
+    <div class="refer-text">
+      <h3>🔗 Refer & Earn</h3>
+      <p>বন্ধুদের ইনভাইট করে পান <span style="color:#fbbf24;font-weight:bold;">🪙 <span id="refRewardText">50</span> Coins</span></p>
+    </div>
+    <button class="refer-btn">Invite <span style="font-size:14px;">➔</span></button>
   </div>
 
   <div class="bottom-nav">
@@ -247,105 +421,55 @@
     <div class="nav-item" onclick="openModal('profileModal')"><span class="nav-icon">👤</span>Profile</div>
   </div>
 
-  <div class="modal" id="notifModal"><div class="modal-content"><button class="close-btn" onclick="closeModal('notifModal')">×</button><h3>🔔 Notifications</h3><div id="notifList"></div></div></div>
+  <div class="modal" id="notifModal"><div class="modal-content"><h3>🔔 Notifications</h3><div id="notifList"></div></div></div>
 
   <div id="webViewModal" class="modal">
-    <div class="webview-header"><div class="title" id="webViewTitle">🌐 Visit Website</div><div class="webview-timer" id="webViewTimer">60s</div><button class="webview-close" onclick="closeWebView()">×</button></div>
+    <div class="webview-header">
+        <div class="title" id="webViewTitle">🌐 Visit Website</div>
+        <div class="webview-timer" id="webViewTimer">60s</div>
+    </div>
     <iframe id="webViewIframe" class="webview-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
   </div>
 
   <div class="modal" id="dailyClaimModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('dailyClaimModal')">×</button>
       <h3>🎁 Daily Claim</h3>
-      <div id="claimAdSection" style="display:none; margin-top: 15px;">
-        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 বিজ্ঞাপনটি শেষ হওয়া পর্যন্ত অপেক্ষা করুন!</p>
-        <div class="ad-video-container"><div class="ad-timer-badge" id="claimAdTimer">15s</div><iframe id="claimAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
+      <div class="daily-claim-cta">
+        <div class="big-gift">🎁</div>
+        <h4>প্রতিদিনের ফ্রি গিফট!</h4>
+        <p>Claim <span class="reward-coin">🪙 <span id="dailyRewardText">5</span> Coins</span> every 24 hours</p>
       </div>
-      <p style="text-align:center;color:#666;margin:15px 0;">Claim <span class="reward-coin">🪙 <span id="dailyRewardText">5</span> Coins</span> every 24 hours</p>
       <button class="btn btn-green" id="claimBtn" onclick="claimDaily()">Claim Now</button>
-    </div>
-  </div>
-
-  <div class="modal" id="wheelModal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('wheelModal')">×</button>
-      <h3>🎡 Lucky Spin</h3>
-      <div id="spinAdSection" style="display:none; margin-top: 15px;">
-        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 স্পিন করার আগে বিজ্ঞাপনটি দেখুন!</p>
-        <div class="ad-video-container"><div class="ad-timer-badge" id="spinAdTimer">15s</div><iframe id="spinAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
-      </div>
-      <div class="wheel-container"><div class="wheel-pointer">▼</div><div class="wheel" id="wheel"></div></div>
-      <div class="spin-result" id="spinResult"></div>
-      <button class="btn" id="spinBtn" onclick="requestSpin()">Spin Now</button>
-      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="spinLeft">10</span>/10</p>
-    </div>
-  </div>
-
-  <div class="modal" id="scratchModal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('scratchModal')">×</button>
-      <h3>🎫 Scratch Card</h3>
-      <div id="scratchAdSection" style="display:none; margin-top: 15px;">
-        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 স্ক্র্যাচ করার আগে বিজ্ঞাপনটি দেখুন!</p>
-        <div class="ad-video-container"><div class="ad-timer-badge" id="scratchAdTimer">15s</div><iframe id="scratchAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
-      </div>
-      <div class="scratch-box" id="scratchBox" onclick="requestScratch()">Tap to Scratch</div>
-      <p style="text-align:center;font-size:12px;color:#888;">Remaining: <span id="scratchLeft">10</span>/10</p>
-    </div>
-  </div>
-
-  <div class="modal" id="quizModal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('quizModal')">×</button>
-      <h3>🧮 Math Quiz</h3>
-      <div id="quizAdSection" style="display:none; margin-top: 15px;">
-        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 সঠিক উত্তরের জন্য বিজ্ঞাপনটি দেখুন!</p>
-        <div class="ad-video-container"><div class="ad-timer-badge" id="quizAdTimer">15s</div><iframe id="quizAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
-      </div>
-      <div id="quizContent">
-        <div class="quiz-q" id="quizQuestion">Loading...</div>
-        <div class="quiz-options" id="quizOptions"></div>
-        <button class="btn btn-green" id="quizVerifyBtn" style="display:none; margin-top: 15px;" onclick="verifyQuizAnswer()">Verify Answer</button>
-      </div>
-      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="quizLeft">10</span>/10</p>
-    </div>
-  </div>
-
-  <div class="modal" id="captchaModal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('captchaModal')">×</button>
-      <h3>🔐 Captcha Solver</h3>
-      <div id="captchaAdSection" style="display:none; margin-top: 15px;">
-        <p style="font-size: 13px; color: #ff4757; text-align: center; margin-bottom: 10px; font-weight: bold;">📺 সঠিক ক্যাপচার জন্য বিজ্ঞাপনটি দেখুন!</p>
-        <div class="ad-video-container"><div class="ad-timer-badge" id="captchaAdTimer">15s</div><iframe id="captchaAdIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
-      </div>
-      <div id="captchaContent"><div class="captcha-box" id="captchaBox">ABCD</div><input type="text" id="captchaInput" placeholder="Type the captcha"><button class="btn" onclick="verifyCaptcha()">Verify</button></div>
-      <p style="text-align:center;font-size:12px;color:#888;margin-top:10px;">Remaining: <span id="captchaLeft">10</span>/10</p>
     </div>
   </div>
 
   <div class="modal" id="visitModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('visitModal')">×</button>
       <h3>🌐 Visit Website</h3>
+      <div class="visit-cta">
+        <div class="big-globe">🌐</div>
+        <h4>ওয়েবসাইট ভিজিট করে ইনকাম!</h4>
+        <p>প্রতিটি ভিজিটে 🪙 <span id="visitRewardText">2</span> Coins আর্ন করুন</p>
+      </div>
       <p style="font-size:12px;color:#ff4757;margin-bottom:10px;font-weight:bold;text-align:center;">⚠️ অ্যাপের ভেতরেই ওয়েবসাইটটি ওপেন হবে, ৬০ সেকেন্ড থাকুন</p>
       <div id="visitList"></div>
     </div>
   </div>
 
-  <div class="modal" id="videoModal">
+  <div class="modal" id="rocketModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('videoModal')">×</button>
-      <h3>📺 Watch Video</h3>
-      <p style="font-size:12px;color:#ff4757;margin-bottom:10px;font-weight:bold;text-align:center;">⚠️ অ্যাপের ভেতরেই ভিডিওটি ওপেন হবে, ৬০ সেকেন্ড দেখুন</p>
-      <div id="videoList"></div>
+      <h3 id="rocketModalTitle">🚀 Rocket 1</h3>
+      <div class="rocket-start-cta">
+        <div class="big-rocket">🚀</div>
+        <h4 id="rocketModalHeadline">Ready to Launch?</h4>
+        <p id="rocketModalDesc">Start Now বাটনে ক্লিক করে টাস্ক শুরু করুন এবং কয়েন আর্ন করুন!</p>
+      </div>
+      <button class="btn btn-green" id="rocketStartBtn" onclick="startRocketTask()">🚀 Start Now</button>
     </div>
   </div>
 
   <div class="modal" id="withdrawModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('withdrawModal')">×</button>
       <h3>💸 Withdraw</h3>
       <div class="withdraw-balance-box">
         <div class="balance-row">🪙 আপনার ব্যালেন্স: <span id="withdrawCoinBalance">0</span> Coins</div>
@@ -364,7 +488,6 @@
 
   <div class="modal" id="leaderboardModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('leaderboardModal')">×</button>
       <h3>🏆 Leaderboard</h3>
       <p style="font-size:11px;color:#888;margin-bottom:10px;">Last updated: <span id="lbDate"></span></p>
       <div id="leaderboardList"></div>
@@ -373,9 +496,8 @@
 
   <div class="modal" id="referModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('referModal')">×</button>
       <h3>🔗 Refer & Earn</h3>
-      <p style="margin:10px 0; color: #667eea; font-weight: bold; text-align: center;">🎁 রেফার করলে <span class="reward-coin">🪙 <span id="refRewardText">50</span> Coins</span> বোনাস পাবেন!</p>
+      <p style="margin:10px 0; color: #4f46e5; font-weight: bold; text-align: center;">🎁 রেফার করলে <span class="reward-coin">🪙 <span id="refRewardTextModal">50</span> Coins</span> বোনাস পাবেন!</p>
       <p style="margin:10px 0;">Your Referral Link:</p>
       <div style="display:flex;gap:8px;">
         <input type="text" id="referLink" readonly>
@@ -385,19 +507,18 @@
         <button class="btn btn-green" style="margin:0;" onclick="shareRefer()">📤 Share Link</button>
       </div>
       <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Total Referrals</p><h3 style="color: #667eea; font-size: 22px; margin-top: 5px;"><span id="totalRefer">0</span></h3></div>
-        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Referral Coins</p><h3 style="color: #f59e0b; font-size: 22px; margin-top: 5px;">🪙 <span id="referIncome">0</span></h3></div>
+        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Total Referrals</p><h3 style="color: #4f46e5; font-size: 22px; margin-top: 5px;"><span id="totalReferModal">0</span></h3></div>
+        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center; border: 1px solid #e0e0e0; color: #333;"><p style="font-size: 12px;">Referral Coins</p><h3 style="color: #f59e0b; font-size: 22px; margin-top: 5px;">🪙 <span id="referIncomeModal">0</span></h3></div>
       </div>
     </div>
   </div>
 
   <div class="modal" id="profileModal">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal('profileModal')">×</button>
       <h3>👤 My Profile</h3>
       <div style="text-align:center; margin-bottom: 10px;"><span class="join-date-badge" id="joinDateBadge">📅 Join Date: --</span></div>
       <div class="profile-photo-container">
-        <img src="https://ui-avatars.com/api/?name=User&background=667eea&color=fff" id="profileImg" alt="Profile"><br><br>
+        <img src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff" id="profileImg" alt="Profile"><br><br>
         <input type="file" accept="image/*" id="photoInput" style="display:none" onchange="uploadPhoto(event)">
         <button class="btn" style="width:auto;padding:8px 20px;" onclick="document.getElementById('photoInput').click()">Change Photo</button>
       </div>
@@ -416,10 +537,10 @@
       <div class="policy-box">
         <h4>১. সাধারণ শর্তাবলী</h4><p>এই অ্যাপটি ব্যবহার করে আপনি আমাদের সমস্ত নিয়ম-কানুন মেনে নিচ্ছেন। কোনো নিয়ম ভঙ্গ হলে আপনার অ্যাকাউন্ট ব্লক করা হবে।</p>
         <h4>২. কয়েন সিস্টেম</h4><ul><li>প্রতিটি কাজ থেকে আপনি কয়েন পাবেন।</li><li>কনভার্শন রেট অ্যাডমিন প্যানেল থেকে নির্ধারিত হয়।</li><li>উইথড্র করার সময় কয়েন স্বয়ংক্রিয়ভাবে টাকায় রূপান্তরিত হবে।</li></ul>
-        <h4>৩. টাস্ক ও রিওয়ার্ড</h4><ul><li>প্রতিদিন নির্দিষ্ট সংখ্যক টাস্ক সম্পন্ন করা যাবে।</li><li>ভুল উত্তর দিলে কোনো রিওয়ার্ড দেওয়া হবে না।</li><li>ভিপিএন ব্যবহার করে টাস্ক করলে অ্যাকাউন্ট ব্লক হতে পারে।</li></ul>
+        <h4>৩. টাস্ক ও রিওয়ার্ড</h4><ul><li>প্রতিদিন নির্দিষ্ট সংখ্যক টাস্ক সম্পন্ন করা যাবে।</li><li>Rewarded Video সম্পূর্ণ দেখলেই কেবল কয়েন পাবেন।</li><li>ভিপিএন ব্যবহার করে টাস্ক করলে অ্যাকাউন্ট ব্লক হতে পারে।</li></ul>
         <h4>৪. রেফারেল পলিসি</h4><p>রেফারেল লিংক শুধুমাত্র নতুন ইউজারদের জন্য প্রযোজ্য। একই ব্যক্তি একাধিকবার রেফার করলে বোনাস বাতিল হবে।</p>
         <h4>৫. উইথড্র পলিসি</h4><ul><li>মিনিমাম উইথড্র অ্যাডমিন প্যানেল থেকে নির্ধারিত হয়।</li><li>উইথড্র রিকোয়েস্ট ২৪-৪৮ ঘণ্টার মধ্যে প্রসেস করা হয়।</li><li>ভুল নাম্বার/ওয়ালেট দিলে টাকা ফেরত দেওয়া হবে না।</li></ul>
-        <h4>৬. ফ্রড পলিসি</h4><ul><li>একই ডিভাইস/আইপি থেকে একাধিক অ্যাকাউন্ট খোলা নিষেধ।</li></ul>
+        <h4>৬. ফ্রড পলিসি</h4><p>একই ডিভাইস/আইপি থেকে একাধিক অ্যাকাউন্ট খোলা, বট ব্যবহার বা কোনো প্রকার প্রতারণা করলে অ্যাকাউন্ট স্থায়ীভাবে ব্লক করা হবে এবং ব্যালেন্স বাজেয়াপ্ত হবে।</p>
       </div>
       <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
@@ -429,7 +550,9 @@
 <div id="toast" class="toast">Toast Message</div>
 
 <script>
-  // --- FIREBASE CONFIGURATION ---
+  /* ============================================================
+     ✅ 1. FIREBASE CONFIGURATION (আপনার নিজের কনফিগ বসান)
+     ============================================================ */
   const firebaseConfig = {
   apiKey: "AIzaSyAdkBnC82Y1R8bNXUQTA6c2yWxB-ePu5Jw",
   authDomain: "rofiqul.firebaseapp.com",
@@ -442,8 +565,22 @@
   };
 
   // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+
+  /* ============================================================
+     ✅ 2. TELEGRAM MINI APP INIT
+     ============================================================ */
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.setHeaderColor('#4f46e5');
+    tg.setBackgroundColor('#f0f2f5');
+    try { tg.disableVerticalSwipes?.(); } catch(e){}
+  }
 
   let isTyping = false;
   document.addEventListener('focusin', (e) => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') isTyping = true; });
@@ -451,15 +588,122 @@
 
   let COINS_PER_TK = 100;
   let TK_PER_COIN_BLOCK = 1;
+  let TASK_COOLDOWN_MS = 60 * 1000;
+  let MASTER_CONFIG = null; 
+  let currentUser = null;
 
-  function loadRatesFromConfig() {
-    const data = getMasterData();
-    if(data.config && data.config.coinSystem) {
-      COINS_PER_TK = data.config.coinSystem.coinsPerTk || 100;
-      TK_PER_COIN_BLOCK = data.config.coinSystem.tkPerCoinsBlock || 1;
+  /* ============================================================
+     ✅ 3. VPN / PROXY CHECKER
+     ============================================================ */
+  async function checkVPNStatus() {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      if (data && data.proxy === true) { return true; }
+      return false;
+    } catch (error) {
+      console.error("VPN Check failed:", error);
+      return false; 
     }
   }
 
+  /* ============================================================
+     ✅ 4. SPLASH SCREEN LOGIC
+     ============================================================ */
+  let splashStartTime = Date.now();
+
+  function hideSplash() {
+    const splash = document.getElementById('splashScreen');
+    if (splash && !splash.classList.contains('hidden')) {
+      const elapsed = Date.now() - splashStartTime;
+      const minDuration = 3500; 
+      
+      const remainingTime = Math.max(0, minDuration - elapsed);
+
+      setTimeout(() => {
+        splash.classList.add('hidden');
+        setTimeout(() => { splash.style.display = 'none'; }, 800); 
+      }, remainingTime);
+    }
+  }
+
+  /* ============================================================
+     ✅ 5. FIREBASE SYNC & DATA FUNCTIONS
+     ============================================================ */
+  
+  async function initFirebaseSync() {
+    // 1. লোড কনফিগ
+    db.collection("settings").doc("config").onSnapshot((doc) => {
+      if (doc.exists) {
+        MASTER_CONFIG = doc.data();
+        if(MASTER_CONFIG.coinSystem) {
+          COINS_PER_TK = MASTER_CONFIG.coinSystem.coinsPerTk || 100;
+          TK_PER_COIN_BLOCK = MASTER_CONFIG.coinSystem.tkPerCoinsBlock || 1;
+        }
+        if(MASTER_CONFIG.cooldownSec !== undefined) {
+          TASK_COOLDOWN_MS = (MASTER_CONFIG.cooldownSec || 60) * 1000;
+        }
+        updateUI(); 
+      }
+    });
+
+    // 2. লোড কারেন্ট ইউজার
+    const userId = localStorage.getItem('app_current_user');
+    if(userId) {
+      db.collection("users").doc(userId).onSnapshot((doc) => {
+        if (doc.exists) {
+          currentUser = { id: doc.id, ...doc.data() };
+          
+          if (currentUser.isBlocked) {
+             localStorage.removeItem('app_current_user');
+             document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f0f2f5; color:#333; padding:20px; text-align:center;"><h1 style="color:#ef4444; font-size:28px;">🚫 Account Blocked</h1><p style="margin-top:10px; font-size:16px;">Your account has been blocked by the Admin.</p><p style="font-size:14px; color:#666;">Reason: Violation of terms or VPN usage.</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer; font-weight:bold;">Back to Login</button></div>';
+             return;
+          }
+          
+          document.getElementById('authScreen').style.display = 'none';
+          document.getElementById('mainApp').style.display = 'block';
+          updateUI();
+          initBannerSlider();
+        } else {
+          localStorage.removeItem('app_current_user');
+          checkLoginStatus();
+        }
+      });
+    } else {
+      checkLoginStatus();
+    }
+  }
+
+  async function saveUserData(updates) {
+    if(!currentUser) return;
+    try {
+      await db.collection("users").doc(currentUser.id).update(updates);
+    } catch (error) {
+      console.error("Error saving user data: ", error);
+    }
+  }
+
+  async function saveUserToDB(userData) {
+    try {
+      const docRef = await db.collection("users").add(userData);
+      return docRef.id;
+    } catch (e) {
+      console.error("Error adding user: ", e);
+      return null;
+    }
+  }
+
+  // ✅ Heartbeat System
+  setInterval(() => {
+    if(currentUser && !document.hidden) {
+      saveUserData({ lastActionTime: Date.now() });
+    }
+  }, 30000);
+
+
+  /* ============================================================
+     ✅ 6. HELPER FUNCTIONS
+     ============================================================ */
   function coinsToTk(coins) {
     if(!COINS_PER_TK || COINS_PER_TK <= 0) return 0;
     return ((coins || 0) / COINS_PER_TK) * TK_PER_COIN_BLOCK;
@@ -468,156 +712,20 @@
     if(!TK_PER_COIN_BLOCK || TK_PER_COIN_BLOCK <= 0) return 0;
     return Math.floor(((tk || 0) / TK_PER_COIN_BLOCK) * COINS_PER_TK);
   }
-  function getRateText() {
-    return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN_BLOCK}`;
+  function getRateText() { return `${COINS_PER_TK} Coins = ৳${TK_PER_COIN_BLOCK}`; }
+
+  function getCooldownRemaining(lastTime) {
+    if(!lastTime) return 0;
+    const elapsed = Date.now() - lastTime;
+    return Math.max(0, TASK_COOLDOWN_MS - elapsed);
   }
-
-  function getClientIpIdentifier() {
-    let ipId = localStorage.getItem('app_client_ip_token');
-    if(!ipId) {
-      ipId = 'ip_' + Math.random().toString(36).substring(2) + Date.now();
-      localStorage.setItem('app_client_ip_token', ipId);
-    }
-    return ipId;
+  function formatCooldown(ms) {
+    if(ms <= 0) return '';
+    const totalSec = Math.ceil(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
   }
-
-  function switchAuth(type) {
-    if(type === 'register') { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
-    else { document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; }
-  }
-
-  function handleRegister() {
-    const name = document.getElementById('regName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const password = document.getElementById('regPassword').value.trim();
-    const referCode = document.getElementById('regReferCode').value.trim();
-    
-    if(!name || !phone || !email || !password) {
-      return showToast('❌ সব ঘর পূরণ করুন (নাম, ফোন, জিমেইল, পাসওয়ার্ড)!');
-    }
-    
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if(!emailRegex.test(email)) {
-      return showToast('❌ সঠিক জিমেইল এড্রেস দিন!');
-    }
-    
-    if(password.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!');
-    
-    const data = getMasterData();
-    const fraudConfig = data.config.fraud || {};
-
-    if(fraudConfig.deviceBlock !== false) {
-      const existingDeviceUser = localStorage.getItem('app_device_registered');
-      if(existingDeviceUser) {
-        return showToast('🚫 এই ডিভাইস থেকে ইতিমধ্যে একটি অ্যাকাউন্ট খোলা হয়েছে! একাধিক অ্যাকাউন্ট খোলা নিষেধ।');
-      }
-    }
-
-    if(fraudConfig.ipBlock !== false) {
-      const currentIpToken = getClientIpIdentifier();
-      const maxAllowedPerIp = fraudConfig.maxAccountsPerIp || 1;
-      
-      const accountsWithSameIp = data.users.filter(u => u.ipToken === currentIpToken);
-      if(accountsWithSameIp.length >= maxAllowedPerIp) {
-        return showToast(`🚫 এই নেটওয়ার্ক/আইপি থেকে সর্বোচ্চ ${maxAllowedPerIp}টি অ্যাকাউন্ট খোলা যাবে!`);
-      }
-    }
-
-    if(data.users.find(u => u.phone === phone)) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
-    if(data.users.find(u => u.email === email)) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
-
-    let referrer = null;
-    if(referCode) {
-      referrer = data.users.find(u => u.myReferCode === referCode || u.phone === referCode || u.email === referCode);
-      if(!referrer) return showToast('❌ রেফারেল কোডটি সঠিক নয়!');
-      if(referrer.phone === phone) return showToast('❌ নিজের কোড ব্যবহার করা যাবে না!');
-    }
-    
-    const clientIp = getClientIpIdentifier();
-    const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
-
-    const newUser = { 
-      id: Date.now(), name, phone, email, password, balance: 0, 
-      myReferCode: uniqueReferCode,
-      isBlocked: false, totalRef: 0, refIncome: 0, 
-      ipToken: clientIp,
-      withdrawHistory: [], notifications: [], 
-      spinUsed: 0, scratchUsed: 0, quizUsed: 0, captchaUsed: 0, 
-      visitUsed: [], videoUsed: [], lastClaimDate: '', lastResetDate: '', 
-      joinDate: new Date().toLocaleDateString(), lastActionTime: 0 
-    };
-    data.users.push(newUser);
-    
-    if(fraudConfig.deviceBlock !== false) {
-      localStorage.setItem('app_device_registered', 'true');
-    }
-    
-    if(referrer) {
-      const refBonusCoins = data.config.refBonus || 50;
-      referrer.balance = (referrer.balance || 0) + refBonusCoins;
-      referrer.totalRef = (referrer.totalRef || 0) + 1;
-      referrer.refIncome = (referrer.refIncome || 0) + refBonusCoins;
-      referrer.notifications = referrer.notifications || [];
-      referrer.notifications.push({ id: Date.now(), msg: `🎉 আপনি ${name}-কে রেফার করেছেন এবং 🪙 ${refBonusCoins} কয়েন বোনাস পেয়েছেন!`, date: new Date().toLocaleDateString() + ', ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-    }
-    
-    saveMasterData(data);
-    localStorage.setItem('app_current_user', newUser.id);
-    showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
-    logUserActivity('📝 নতুন রেজিস্ট্রেশন করেছে (+🪙0)');
-    
-    document.getElementById('regName').value = ''; 
-    document.getElementById('regPhone').value = ''; 
-    document.getElementById('regEmail').value = '';
-    document.getElementById('regPassword').value = ''; 
-    document.getElementById('regReferCode').value = '';
-    
-    if(window.location.search.includes('ref=')) window.history.replaceState({}, document.title, window.location.pathname);
-    checkLoginStatus();
-  }
-
-  function handleLogin() {
-    const loginInput = document.getElementById('loginInput').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    
-    if(!loginInput || !password) return showToast('ফোন নম্বর/জিমেইল এবং পাসওয়ার্ড দিন!');
-    
-    const data = getMasterData();
-    const user = data.users.find(u => u.phone === loginInput || u.email === loginInput);
-    
-    if(!user) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
-    if(user.password !== password) return showToast('❌ পাসওয়ার্ড সঠিক নয়!');
-    if(user.isBlocked) return showToast('🚫 আপনার অ্যাকাউন্ট ব্লক করা হয়েছে!');
-    
-    localStorage.setItem('app_current_user', user.id);
-    showToast('✅ লগইন সফল হয়েছে!');
-    logUserActivity('🔐 অ্যাপে লগইন করেছে (+🪙0)');
-    
-    document.getElementById('loginInput').value = ''; 
-    document.getElementById('loginPassword').value = '';
-    checkLoginStatus();
-  }
-
-  function checkLoginStatus() {
-    const userId = localStorage.getItem('app_current_user');
-    if(userId) {
-      const data = getMasterData();
-      const user = data.users.find(u => u.id == userId);
-      if(user) {
-        loadRatesFromConfig();
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        updateUI();
-        initBannerSlider();
-        return;
-      }
-    }
-    document.getElementById('authScreen').style.display = 'flex';
-    document.getElementById('mainApp').style.display = 'none';
-  }
-
-  let currentUser = null;
   function formatDate(dateStr) {
     if(!dateStr) return 'N/A';
     const parts = dateStr.split('/');
@@ -625,101 +733,152 @@
     return dateStr;
   }
 
-  function getCurrentUser() {
-    const data = getMasterData();
-    const userId = localStorage.getItem('app_current_user');
-    if(userId) currentUser = data.users.find(u => u.id == userId);
-    return currentUser;
+  /* ============================================================
+     ✅ 7. AUTH FUNCTIONS (With VPN Check)
+     ============================================================ */
+  function switchAuth(type) {
+    if(type === 'register') { document.getElementById('loginForm').style.display = 'none'; document.getElementById('registerForm').style.display = 'block'; }
+    else { document.getElementById('registerForm').style.display = 'none'; document.getElementById('loginForm').style.display = 'block'; }
   }
 
-  // --- FIREBASE MASTER DATA SYNC ---
-  function getMasterData() {
-    let localData = JSON.parse(localStorage.getItem('app_master_db'));
-    
-    db.ref('master_db').once('value').then((snapshot) => {
-      const remoteData = snapshot.val();
-      if(remoteData) {
-        if(!localData || JSON.stringify(localData) !== JSON.stringify(remoteData)) {
-          localStorage.setItem('app_master_db', JSON.stringify(remoteData));
-          if(typeof updateUI === 'function' && localStorage.getItem('app_current_user')) {
-            updateUI();
-          }
-        }
-      } else if(localData) {
-        db.ref('master_db').set(localData);
+  async function handleRegister() {
+    if(!MASTER_CONFIG) return showToast('⏳ Loading settings, please wait...');
+
+    if(MASTER_CONFIG.fraud && MASTER_CONFIG.fraud.vpnBlock) {
+      showToast('🔍 Checking Network Security...');
+      const isVpn = await checkVPNStatus();
+      if(isVpn) {
+        return showToast('🚫 ভিপিএন বন্ধ করে আবার চেষ্টা করুন!', '#ef4444');
       }
-    });
-
-    if(!localData || !localData.users) { 
-      localData = { users: [], config: {}, banners: [], activityLogs: [] }; 
-      localStorage.setItem('app_master_db', JSON.stringify(localData)); 
     }
-    if(!localData.config) localData.config = {};
-    if(!localData.config.fraud) localData.config.fraud = { forceAd: true, vpnBlock: false, multiAccountBlock: true, deviceBlock: true, ipBlock: true, maxAccountsPerIp: 1, maxWithdraw: 1000, spamTimer: 5 };
-    if(!localData.config.coinSystem) localData.config.coinSystem = { coinsPerTk: 100, tkPerCoinsBlock: 1 };
+
+    const name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const referCode = document.getElementById('regReferCode').value.trim();
     
-    return localData;
+    if(!name || !phone || !email || !password) return showToast('❌ সব ঘর পূরণ করুন!');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if(!emailRegex.test(email)) return showToast('❌ সঠিক জিমেইল এড্রেস দিন!');
+    if(password.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!');
+
+    try {
+      showToast('⏳ রেজিস্ট্রেশন হচ্ছে...');
+      
+      const phoneCheck = await db.collection("users").where("phone", "==", phone).get();
+      if(!phoneCheck.empty) return showToast('এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+      
+      const emailCheck = await db.collection("users").where("email", "==", email).get();
+      if(!emailCheck.empty) return showToast('এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে!');
+
+      let referrer = null;
+      if(referCode) {
+        const refCheck = await db.collection("users").where("myReferCode", "==", referCode).get();
+        if(refCheck.empty) return showToast('❌ রেফারেল কোডটি সঠিক নয়!');
+        referrer = { id: refCheck.docs[0].id, ...refCheck.docs[0].data() };
+      }
+
+      const uniqueReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
+      const newUser = {
+        name, phone, email, password, balance: 0, myReferCode: uniqueReferCode,
+        isBlocked: false, totalRef: 0, refIncome: 0,
+        withdrawHistory: [], notifications: [],
+        rocket1Used: 0, rocket2Used: 0, rocket3Used: 0, rocket4Used: 0, rocket5Used: 0, rocket6Used: 0,
+        lastDailyClaimTime: 0, lastRocket1Time: 0, lastRocket2Time: 0, lastRocket3Time: 0, lastRocket4Time: 0, lastRocket5Time: 0, lastRocket6Time: 0,
+        visitUsed: [], lastClaimDate: '', joinDate: new Date().toLocaleDateString(),
+        lastActionTime: Date.now(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const newUserId = await saveUserToDB(newUser);
+      if(!newUserId) throw new Error("Failed");
+
+      if(referrer) {
+        const refBonusCoins = MASTER_CONFIG.refBonus || 50;
+        await db.collection("users").doc(referrer.id).update({
+          balance: firebase.firestore.FieldValue.increment(refBonusCoins),
+          totalRef: firebase.firestore.FieldValue.increment(1),
+          refIncome: firebase.firestore.FieldValue.increment(refBonusCoins),
+          notifications: firebase.firestore.FieldValue.arrayUnion({ id: Date.now(), msg: `🎉 আপনি ${name}-কে রেফার করেছেন এবং 🪙 ${refBonusCoins} কয়েন বোনাস পেয়েছেন!`, date: new Date().toLocaleDateString() })
+        });
+      }
+
+      localStorage.setItem('app_current_user', newUserId);
+      showToast('✅ রেজিস্ট্রেশন সফল হয়েছে!');
+      document.getElementById('regName').value = ''; document.getElementById('regPhone').value = ''; document.getElementById('regEmail').value = '';
+      document.getElementById('regPassword').value = ''; document.getElementById('regReferCode').value = '';
+      if(window.location.search.includes('ref=')) window.history.replaceState({}, document.title, window.location.pathname);
+      initFirebaseSync();
+      
+    } catch (error) {
+      console.error(error);
+      showToast('❌ রেজিস্ট্রেশন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
+    }
   }
 
-  function saveMasterData(data) { 
-    localStorage.setItem('app_master_db', JSON.stringify(data));
-    db.ref('master_db').set(data).catch((error) => {
-      console.error("Firebase Sync Error: ", error);
-    });
+  async function handleLogin() {
+    if(!MASTER_CONFIG) return showToast('⏳ Loading settings, please wait...');
+
+    if(MASTER_CONFIG.fraud && MASTER_CONFIG.fraud.vpnBlock) {
+      showToast('🔍 Checking Network Security...');
+      const isVpn = await checkVPNStatus();
+      if(isVpn) {
+        return showToast('🚫 ভিপিএন বন্ধ করে আবার চেষ্টা করুন!', '#ef4444');
+      }
+    }
+
+    const loginInput = document.getElementById('loginInput').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if(!loginInput || !password) return showToast('ফোন/জিমেইল এবং পাসওয়ার্ড দিন!');
+    
+    try {
+      showToast('⏳ চেক করা হচ্ছে...');
+      let querySnapshot = await db.collection("users").where("phone", "==", loginInput).get();
+      if(querySnapshot.empty) {
+        querySnapshot = await db.collection("users").where("email", "==", loginInput).get();
+      }
+      
+      if(querySnapshot.empty) return showToast('❌ এই তথ্য দিয়ে কোনো অ্যাকাউন্ট নেই!');
+      
+      const userDoc = querySnapshot.docs[0];
+      const user = userDoc.data();
+      
+      if(user.password !== password) return showToast('❌ পাসওয়ার্ড সঠিক নয়!');
+      if(user.isBlocked) return showToast('🚫 আপনার অ্যাকাউন্ট ব্লক করা হয়েছে!');
+      
+      await db.collection("users").doc(userDoc.id).update({ lastActionTime: Date.now() });
+      localStorage.setItem('app_current_user', userDoc.id);
+      
+      showToast('✅ লগইন সফল হয়েছে!');
+      document.getElementById('loginInput').value = ''; document.getElementById('loginPassword').value = '';
+      initFirebaseSync();
+      
+    } catch (error) {
+      console.error(error);
+      showToast('⚠️ লগইন ব্যর্থ হয়েছে। ইন্টারনেট চেক করুন।');
+    }
   }
 
-  function logUserActivity(actionName) {
-    const data = getMasterData();
+  function checkLoginStatus() {
     const userId = localStorage.getItem('app_current_user');
-    if (!userId) return;
-    
-    const user = data.users.find(u => u.id == userId);
-    if (!user) return;
-
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    let hours = now.getHours();
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    
-    const timeStr = `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
-
-    data.activityLogs.unshift({
-      userId: user.id,
-      userName: user.name,
-      phone: user.phone,
-      action: actionName,
-      time: timeStr,
-      currentBalance: (user.balance || 0).toFixed(0),
-      timestamp: Date.now()
-    });
-
-    if (data.activityLogs.length > 100) {
-      data.activityLogs = data.activityLogs.slice(0, 100);
+    if(userId) {
+       initFirebaseSync();
+    } else {
+       document.getElementById('authScreen').style.display = 'flex';
+       document.getElementById('mainApp').style.display = 'none';
+       hideSplash(); 
     }
-
-    saveMasterData(data);
   }
 
+  /* ============================================================
+     ✅ 8. UI UPDATER
+     ============================================================ */
   function updateUI() {
-    if(isTyping) return;
-    const u = getCurrentUser();
-    if(!u) { checkLoginStatus(); return; }
-    const data = getMasterData();
-    const c = data.config;
+    if(isTyping || !currentUser || !MASTER_CONFIG) return;
+    const u = currentUser;
+    const c = MASTER_CONFIG;
 
-    loadRatesFromConfig();
-
-    if(u.isBlocked) {
-      localStorage.removeItem('app_current_user');
-      document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:#f0f2f5; color:#333;"><h1>🚫 Account Blocked</h1><p>Please contact support.</p><button onclick="location.reload()" style="margin-top:20px;padding:10px 20px;background:#ef4444;color:white;border:none;border-radius:5px;cursor:pointer;">Back to Login</button></div>';
-      return;
-    }
+    hideSplash();
 
     if(u.notifications && u.notifications.length > 0) document.getElementById('notifBadge').style.display = 'block';
     else document.getElementById('notifBadge').style.display = 'none';
@@ -728,71 +887,516 @@
     document.getElementById('coinDisplay').innerText = Math.floor(coins);
     document.getElementById('tkDisplay').innerText = coinsToTk(coins).toFixed(2);
     document.getElementById('headerName').innerText = u.name;
-    document.getElementById('headerPhone').innerText = u.phone;
-    
     document.getElementById('profileName').value = u.name;
     document.getElementById('profilePhone').value = u.phone;
     document.getElementById('profileEmail').value = u.email || '';
-    
     document.getElementById('joinDateBadge').innerText = '📅 Join Date: ' + formatDate(u.joinDate);
 
-    document.getElementById('spinLeft').innerText = Math.max(0, c.limitSpin - (u.spinUsed || 0));
-    document.getElementById('scratchLeft').innerText = Math.max(0, c.limitScratch - (u.scratchUsed || 0));
-    document.getElementById('quizLeft').innerText = Math.max(0, c.limitQuiz - (u.quizUsed || 0));
-    document.getElementById('captchaLeft').innerText = Math.max(0, c.limitCaptcha - (u.captchaUsed || 0));
+    const claimed = u.lastClaimDate === new Date().toDateString();
+    const dailyBadge = document.getElementById('dailyClaimBadge');
+    if (dailyBadge) dailyBadge.innerText = claimed ? 'Claimed ✓' : 'Available';
+    const dailyInline = document.getElementById('dailyClaimInlineStatus');
+    if (dailyInline) dailyInline.innerText = claimed ? '(আজ ক্লেইম করা হয়েছে)' : 'আজ ক্লেইম করুন';
+    const dailyBtn = document.getElementById('dailyClaimStartBtn');
+    if (dailyBtn) {
+      if (claimed) { dailyBtn.innerText = 'Claimed ✓'; dailyBtn.disabled = true; }
+      else {
+        const rem = getCooldownRemaining(u.lastDailyClaimTime || 0);
+        if (rem > 0) { dailyBtn.innerText = `⏳ ${formatCooldown(rem)}`; dailyBtn.disabled = true; }
+        else { dailyBtn.innerText = 'Claim Now ➔'; dailyBtn.disabled = false; }
+      }
+    }
 
-    document.getElementById('wheelStatus').innerText = Math.max(0, c.limitSpin - (u.spinUsed || 0)) + ' left today';
-    document.getElementById('scratchStatus').innerText = Math.max(0, c.limitScratch - (u.scratchUsed || 0)) + ' left today';
-    document.getElementById('quizStatus').innerText = Math.max(0, c.limitQuiz - (u.quizUsed || 0)) + ' left today';
-    document.getElementById('captchaStatus').innerText = Math.max(0, c.limitCaptcha - (u.captchaUsed || 0)) + ' left today';
-    
-    document.getElementById('visitStatus').innerText = Math.max(0, c.limitVisit - (u.visitUsed || []).length) + ' links · 1 min';
-    document.getElementById('videoStatus').innerText = Math.max(0, c.limitVideo - (u.videoUsed || []).length) + ' links · 1 min';
+    for (let i = 1; i <= 6; i++) {
+      const btn = document.getElementById('rocket'+i+'Btn');
+      const badge = document.getElementById('badgeRocket'+i);
+      if (!btn) continue;
+      const rem = getCooldownRemaining(u['lastRocket'+i+'Time'] || 0);
+      const used = u['rocket'+i+'Used'] || 0;
+      const limit = c['limitRocket'+i] || 10;
+      const left = Math.max(0, limit - used);
 
-    document.getElementById('totalRefer').innerText = u.totalRef || 0;
-    document.getElementById('referIncome').innerText = u.refIncome || 0;
-    document.getElementById('referStatus').innerText = (u.totalRef || 0) + ' refer';
-    document.getElementById('dailyClaimStatus').innerText = u.lastClaimDate === new Date().toDateString() ? 'Claimed ✓' : 'Available';
-    
-    document.getElementById('dailyRewardText').innerText = c.dailyClaim;
+      if (badge) {
+        if (left === 0) badge.innerText = 'Limit Done';
+        else badge.innerText = left + ' left';
+      }
+
+      if (rem > 0) { btn.innerText = `⏳ ${formatCooldown(rem)}`; btn.disabled = true; }
+      else if (used >= limit) { btn.innerText = 'Limit Done ✓'; btn.disabled = true; }
+      else { btn.innerText = 'Start Now ➔'; btn.disabled = false; }
+    }
+
+    const visitLimit = c.limitVisit || 10;
+    const visitCount = (u.visitUsed || []).length;
+    const visitLeft = Math.max(0, visitLimit - visitCount);
+    const visitBadge = document.getElementById('visitBadge');
+    if (visitBadge) visitBadge.innerText = visitLeft + ' left';
+    const visitRewardText = document.getElementById('visitRewardText');
+    if (visitRewardText) visitRewardText.innerText = c.visitReward || 2;
+
     document.getElementById('refRewardText').innerText = c.refBonus;
-
+    document.getElementById('totalReferModal').innerText = u.totalRef || 0;
+    document.getElementById('referIncomeModal').innerText = u.refIncome || 0;
+    document.getElementById('refRewardTextModal').innerText = c.refBonus;
+    document.getElementById('dailyRewardText').innerText = c.dailyClaim;
     document.getElementById('withdrawCoinBalance').innerText = Math.floor(coins);
     document.getElementById('withdrawTkBalance').innerText = coinsToTk(coins).toFixed(2);
     document.getElementById('rateDisplayText').innerText = getRateText();
 
     if(u.photo) { document.getElementById('headerAvatar').src = u.photo; document.getElementById('profileImg').src = u.photo; }
-
     renderHistory();
     renderLeaderboard();
     renderVisitList();
-    renderVideoList();
     generateReferLink(u);
     renderWithdrawMethods();
   }
 
-  function generateReferLink(user) {
-    if(!user) return;
-    
-    if(!user.myReferCode) {
-      user.myReferCode = 'REF-' + Math.floor(100000 + Math.random() * 900000);
-      const data = getMasterData();
-      const targetUser = data.users.find(u => u.id === user.id);
-      if(targetUser) {
-        targetUser.myReferCode = user.myReferCode;
-        saveMasterData(data);
-      }
+  setInterval(() => {
+    if(!currentUser) return;
+    if(isTyping) return;
+    const u = currentUser;
+
+    const dailyBtn = document.getElementById('dailyClaimStartBtn');
+    if (dailyBtn && u.lastClaimDate !== new Date().toDateString()) {
+      const rem = getCooldownRemaining(u.lastDailyClaimTime || 0);
+      if (rem > 0) { dailyBtn.innerText = `⏳ ${formatCooldown(rem)}`; dailyBtn.disabled = true; }
+      else if (dailyBtn.disabled) { dailyBtn.innerText = 'Claim Now ➔'; dailyBtn.disabled = false; }
     }
 
-    const baseUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
-    const refLink = `${baseUrl}?ref=${encodeURIComponent(user.myReferCode)}`;
+    for (let i = 1; i <= 6; i++) {
+      const btn = document.getElementById('rocket'+i+'Btn');
+      if (!btn) continue;
+      const rem = getCooldownRemaining(u['lastRocket'+i+'Time'] || 0);
+      if (rem > 0) { btn.innerText = `⏳ ${formatCooldown(rem)}`; btn.disabled = true; }
+      else if (btn.disabled && (u['rocket'+i+'Used'] || 0) < (MASTER_CONFIG['limitRocket'+i] || 10)) {
+        btn.innerText = 'Start Now ➔'; btn.disabled = false;
+      }
+    }
+  }, 1000);
+
+  function generateReferLink(user) {
+    if(!user) return;
+    const botName = 'YOUR_BOT_USERNAME';
+    const baseUrl = `https://t.me/${botName}/app`;
+    const refLink = `${baseUrl}?startapp=${encodeURIComponent(user.myReferCode)}`;
     const input = document.getElementById('referLink');
     if(input) input.value = refLink;
   }
 
-  function autoFillReferCode() {
+  /* ============================================================
+     ✅ 9. ACTION HANDLERS (Tasks)
+     ============================================================ */
+  let lastClickTime = 0;
+  function checkBotDetection() {
+    const fraud = MASTER_CONFIG.fraud || {};
+    if (fraud.botDetect !== false) {
+      const now = Date.now();
+      const interval = fraud.botClickInterval || 300;
+      if (now - lastClickTime < interval) {
+        showToast('🤖 বট ডিটেক্টেড! দ্রুত ক্লিক করবেন না।', '#ef4444');
+        return false;
+      }
+      lastClickTime = now;
+    }
+    return true;
+  }
+
+  function openModal(id) {
+    if(!checkBotDetection()) return;
+    updateUI();
+    document.getElementById(id).classList.add('active');
+    history.pushState(null, null, location.href);
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  function showHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+  async function claimDaily() {
+    if(!checkBotDetection()) return;
+    if(currentUser.lastClaimDate === new Date().toDateString()) return showToast('Already claimed today!');
+    const rem = getCooldownRemaining(currentUser.lastDailyClaimTime || 0);
+    if (rem > 0) return showToast(`⏳ ${formatCooldown(rem)} অপেক্ষা করুন!`);
+
+    const btn = document.getElementById('claimBtn');
+    btn.disabled = true;
+    btn.innerText = '📺 অ্যাড লোড হচ্ছে...';
+
+    showRewardedAd(
+      'dailyClaim',
+      async () => {
+        await saveUserData({
+          balance: firebase.firestore.FieldValue.increment(MASTER_CONFIG.dailyClaim),
+          lastClaimDate: new Date().toDateString(),
+          lastDailyClaimTime: Date.now(),
+          lastActionTime: Date.now()
+        });
+        showToast(`🎉 🪙 ${MASTER_CONFIG.dailyClaim} Coins Claimed!`);
+        btn.disabled = false;
+        btn.innerText = 'Claim Now';
+        closeModal('dailyClaimModal');
+      },
+      () => { btn.disabled = false; btn.innerText = 'Claim Now'; }
+    );
+  }
+
+  let currentRocket = 1;
+  function openRocketModal(num) {
+    if(!checkBotDetection()) return;
+    currentRocket = num;
+    const c = MASTER_CONFIG;
+    const user = currentUser;
+    const reward = c['rocket'+num+'Reward'] || 3;
+    const limit = c['limitRocket'+num] || 10;
+    const used = user['rocket'+num+'Used'] || 0;
+    const left = Math.max(0, limit - used);
+    const rem = getCooldownRemaining(user['lastRocket'+num+'Time'] || 0);
+
+    document.getElementById('rocketModalTitle').innerText = '🚀 Rocket ' + num;
+    const startBtn = document.getElementById('rocketStartBtn');
+    if (rem > 0) {
+      document.getElementById('rocketModalHeadline').innerText = `⏳ অপেক্ষা করুন ${formatCooldown(rem)}`;
+      document.getElementById('rocketModalDesc').innerText = 'একটি কাজ শেষ করার পর ১ মিনিট অপেক্ষা করতে হবে।';
+      startBtn.innerHTML = `⏳ ${formatCooldown(rem)}`;
+      startBtn.disabled = true;
+    } else if (left <= 0) {
+      document.getElementById('rocketModalHeadline').innerText = '❌ আজকের লিমিট শেষ';
+      document.getElementById('rocketModalDesc').innerText = 'আগামীকাল আবার চেষ্টা করুন।';
+      startBtn.innerHTML = '❌ Limit Done';
+      startBtn.disabled = true;
+    } else {
+      document.getElementById('rocketModalHeadline').innerText = `আজ বাকি আছে ${left} টি টাস্ক`;
+      document.getElementById('rocketModalDesc').innerText = `Start Now বাটনে ক্লিক করে টাস্ক শুরু করুন এবং 🪙 ${reward} Coins আর্ন করুন!`;
+      startBtn.innerHTML = `🚀 Start Now (+🪙${reward})`;
+      startBtn.disabled = false;
+    }
+    document.getElementById('rocketModal').classList.add('active');
+    history.pushState(null, null, location.href);
+  }
+
+  async function startRocketTask() {
+    if(!checkBotDetection()) return;
+    const num = currentRocket;
+    const reward = MASTER_CONFIG['rocket'+num+'Reward'] || 3;
+    const limit = MASTER_CONFIG['limitRocket'+num] || 10;
+    const used = currentUser['rocket'+num+'Used'] || 0;
+    
+    if (used >= limit) return showToast('❌ আজকের লিমিট শেষ!');
+    if (getCooldownRemaining(currentUser['lastRocket'+num+'Time'] || 0) > 0) return showToast('⏳ ১ মিনিট অপেক্ষা করুন!');
+
+    const btn = document.getElementById('rocketStartBtn');
+    btn.disabled = true;
+    btn.innerText = '📺 অ্যাড লোড হচ্ছে...';
+
+    showRewardedAd(
+      'rocket' + num,
+      async () => {
+        let updates = {};
+        updates['rocket'+num+'Used'] = firebase.firestore.FieldValue.increment(1);
+        updates['lastRocket'+num+'Time'] = Date.now();
+        updates['lastActionTime'] = Date.now();
+        updates['balance'] = firebase.firestore.FieldValue.increment(reward);
+
+        await saveUserData(updates);
+        
+        showToast(`🚀 Rocket ${num} Complete! +🪙${reward} Coins`);
+        closeModal('rocketModal');
+      },
+      () => {
+        btn.disabled = false;
+        btn.innerText = `🚀 Start Now (+🪙${reward})`;
+      }
+    );
+  }
+
+  /* ============================================================
+     ✅ 10. VISIT WEBSITE
+     ============================================================ */
+  function renderVisitList() {
+    const list = document.getElementById('visitList');
+    let links = MASTER_CONFIG.visitLinks || ['https://example.com'];
+    const limit = MASTER_CONFIG.limitVisit || 10;
+    list.innerHTML = links.slice(0, limit).map((urlObj, i) => {
+      const url = typeof urlObj === 'string' ? urlObj : urlObj.url;
+      const title = typeof urlObj === 'string' ? url.replace('https://','').substring(0,25) + '...' : (urlObj.title || 'Website ' + (i+1));
+      const used = (currentUser.visitUsed || []).includes(i);
+      return `<div class="list-item"><span style="font-size:12px;">${title}</span><button onclick="startTimer('visit', ${i}, '${url}')" ${used ? 'disabled' : ''}>${used ? 'Done ✓' : 'Visit'}</button></div>`;
+    }).join('');
+  }
+
+  let activeTimer = null;
+  let timerCompleted = false;
+  function startTimer(type, idx, url) {
+    if(!checkBotDetection()) return;
+    timerCompleted = false;
+    openWebView(url, '🌐 Visit Website');
+    let timeLeft = 60;
+    const timerEl = document.getElementById('webViewTimer');
+    timerEl.textContent = timeLeft + 's';
+    if(activeTimer) clearInterval(activeTimer);
+    activeTimer = setInterval(async () => {
+      timeLeft--;
+      timerEl.textContent = timeLeft + 's';
+      if(timeLeft <= 0) {
+        clearInterval(activeTimer);
+        timerCompleted = true;
+        closeWebView();
+        let newVisitUsed = currentUser.visitUsed || [];
+        newVisitUsed.push(idx);
+        
+        await saveUserData({
+          visitUsed: newVisitUsed,
+          balance: firebase.firestore.FieldValue.increment(MASTER_CONFIG.visitReward || 2),
+          lastActionTime: Date.now()
+        });
+        showToast(`✅ Visited! +🪙${MASTER_CONFIG.visitReward || 2} Coins`);
+      }
+    }, 1000);
+  }
+
+  function openWebView(url, title) {
+    document.getElementById('webViewTitle').textContent = title;
+    document.getElementById('webViewIframe').src = url;
+    document.getElementById('webViewModal').classList.add('active');
+    history.pushState(null, null, location.href);
+  }
+  function closeWebView() {
+    if(activeTimer) clearInterval(activeTimer);
+    document.getElementById('webViewModal').classList.remove('active');
+    document.getElementById('webViewIframe').src = 'about:blank';
+    if(!timerCompleted) showToast('⚠️ ৬০ সেকেন্ড শেষ করেননি!');
+  }
+
+  /* ============================================================
+     ✅ 11. WITHDRAW
+     ============================================================ */
+  let selectedMethodData = null;
+  function renderWithdrawMethods() {
+    const methods = MASTER_CONFIG.withdrawMethods || [];
+    const container = document.getElementById('withdrawOptions');
+    if(methods.length === 0) { container.innerHTML = '<p style="text-align:center; color:#888;">No methods available.</p>'; return; }
+    container.innerHTML = methods.map((m, i) => {
+      const minCoins = tkToCoins(m.minAmount);
+      return `<div class="withdraw-option" data-index="${i}" onclick="selectWithdrawMethod(this, ${i})"><div class="method-info">${m.logo ? `<img src="${m.logo}" class="w-logo" alt="${m.name}">` : `<span style="font-size: 22px;">🏦</span>`}${m.name}</div><span>Min 🪙 ${minCoins}</span></div>`;
+    }).join('');
+    selectedMethodData = null;
+  }
+  function selectWithdrawMethod(el, index) {
+    document.querySelectorAll('.withdraw-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedMethodData = MASTER_CONFIG.withdrawMethods[index];
+  }
+  async function submitWithdraw() {
+    if(!checkBotDetection()) return;
+    if(!selectedMethodData) return showToast('Select method!');
+    const num = document.getElementById('withdrawNumber').value.trim();
+    const coinsAmt = parseFloat(document.getElementById('withdrawAmount').value);
+    if(!num) return showToast('Enter number/address!');
+    if(!coinsAmt || coinsAmt <= 0) return showToast('Enter valid coin amount!');
+    
+    const tkAmt = coinsToTk(coinsAmt);
+    const maxWithdrawTk = MASTER_CONFIG.fraud?.maxWithdraw || 0;
+    if(maxWithdrawTk > 0 && tkAmt > maxWithdrawTk) return showToast(`❌ Max ৳${maxWithdrawTk}`);
+    const minCoinsRequired = tkToCoins(selectedMethodData.minAmount);
+    if(coinsAmt < minCoinsRequired) return showToast(`Min 🪙${minCoinsRequired} required!`);
+    if(coinsAmt > (currentUser.balance || 0)) return showToast('Insufficient balance!');
+    
+    const now = new Date();
+    const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
+    const newHistoryObj = { method: selectedMethodData.name, amount: coinsAmt, tkAmount: tkAmt, number: num, date: timeStr, status: 'pending' };
+    
+    await saveUserData({
+      balance: firebase.firestore.FieldValue.increment(-coinsAmt),
+      withdrawHistory: firebase.firestore.FieldValue.arrayUnion(newHistoryObj),
+      lastActionTime: Date.now()
+    });
+
+    showToast(`✅ Request submitted!`);
+    document.getElementById('withdrawNumber').value = ''; document.getElementById('withdrawAmount').value = '';
+    selectedMethodData = null;
+  }
+  
+  function renderHistory() {
+    const el = document.getElementById('withdrawHistory');
+    const history = currentUser.withdrawHistory || [];
+    if(history.length === 0) { el.innerHTML = '<p style="color:#888;font-size:12px;">No history</p>'; return; }
+    const reversedHistory = [...history].reverse();
+    el.innerHTML = reversedHistory.map(h => {
+      const coinsAmt = h.amount;
+      const tkAmt = h.tkAmount !== undefined ? h.tkAmount : coinsToTk(coinsAmt);
+      return `<div class="history-item"><div style="display:flex;justify-content:space-between;"><strong>${h.method}</strong><span>🪙 ${coinsAmt} (≈৳${tkAmt.toFixed(2)})</span></div><div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="font-size:11px;color:#888;">${formatDate(h.date)}</span><span class="status ${h.status}">${h.status}</span></div></div>`;
+    }).join('');
+  }
+
+  async function renderLeaderboard() {
+    const el = document.getElementById('leaderboardList');
+    el.innerHTML = '<p style="text-align:center; color:#888;">Loading...</p>';
+    try {
+      const snapshot = await db.collection("users").orderBy("balance", "desc").limit(50).get();
+      let html = '';
+      let index = 1;
+      snapshot.forEach(doc => {
+        const u = doc.data();
+        const isMe = doc.id === currentUser.id ? 'me' : '';
+        const badge = isMe ? '<span>You</span>' : '';
+        const rank = index === 1 ? '🥇' : index === 2 ? '🥈' : index === 3 ? '🥉' : '#' + index;
+        const photo = u.photo || 'https://ui-avatars.com/api/?name=' + u.name.charAt(0) + '&background=4f46e5&color=fff';
+        html += `<div class="lb-item ${isMe}"><div class="lb-rank">${rank}</div><img src="${photo}" class="lb-avatar"><div class="lb-info"><h4>${u.name} ${badge}</h4><p>${formatDate(u.joinDate)}</p></div><div class="lb-amount">🪙 ${Math.floor(u.balance)}</div></div>`;
+        index++;
+      });
+      el.innerHTML = html;
+      document.getElementById('lbDate').textContent = new Date().toLocaleDateString();
+    } catch(e) {
+      el.innerHTML = '<p style="text-align:center; color:red;">Error loading leaderboard</p>';
+    }
+  }
+
+  async function saveProfile() {
+    const newName = document.getElementById('profileName').value.trim() || 'Guest User';
+    const newPhone = document.getElementById('profilePhone').value.trim() || '+880 1XXXXXXXXX';
+    const newEmail = document.getElementById('profileEmail').value.trim();
+    await saveUserData({ name: newName, phone: newPhone, email: newEmail });
+    showToast('✅ Profile saved!');
+  }
+  async function changePassword() {
+    const oldPass = document.getElementById('oldPassword').value.trim();
+    const newPass = document.getElementById('newPassword').value.trim();
+    const confirmPass = document.getElementById('confirmPassword').value.trim();
+    if(!oldPass || !newPass || !confirmPass) return showToast('সব ঘর পূরণ করুন!');
+    if(oldPass !== currentUser.password) return showToast('পুরনো পাসওয়ার্ড সঠিক নয়!');
+    if(newPass.length < 4) return showToast('কমপক্ষে ৪ অক্ষর!');
+    if(newPass !== confirmPass) return showToast('পাসওয়ার্ড মিলছে না!');
+    
+    await saveUserData({ password: newPass });
+    document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = '';
+    showToast('✅ পাসওয়ার্ড পরিবর্তন হয়েছে!');
+  }
+
+  function uploadPhoto(e) {
+    const file = e.target.files[0]; if(!file) return;
+    if(file.size > 800000) return showToast('❌ ছবি ৮০০KB এর কম হতে হবে!');
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      await saveUserData({ photo: ev.target.result });
+      showToast('✅ Photo updated!');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function copyRefer() {
+    const input = document.getElementById('referLink');
+    if(!input || !input.value) return showToast('❌ Link not ready!');
+    input.select(); input.setSelectionRange(0, 99999);
+    try {
+      navigator.clipboard.writeText(input.value).then(() => showToast('✅ Link copied!'));
+    } catch(e) { document.execCommand('copy'); showToast('✅ Link copied!'); }
+  }
+  function shareRefer() {
+    const input = document.getElementById('referLink');
+    if(!input || !input.value) return showToast('❌ Link not ready!');
+    const shareText = `🎁 Rocket Earning App-এ যোগ দিন!\nআমার রেফারেল লিংক ব্যবহার করে রেজিস্টার করুন এবং 🪙 ${MASTER_CONFIG.refBonus} কয়েন বোনাস পান!\n\n${input.value}`;
+    if(navigator.share) navigator.share({ title: 'Rocket Earning App', text: shareText, url: input.value }).catch(() => {});
+    else { navigator.clipboard.writeText(shareText).then(() => showToast('✅ Share text copied!')); }
+  }
+
+  /* ============================================================
+     ✅ 12. BANNER & TOAST & MISC
+     ============================================================ */
+  let currentBannerIndex = 0;
+  let bannerSlideInterval = null;
+  function initBannerSlider() {
+    if(!MASTER_CONFIG) return;
+    const track = document.getElementById('bannerTrack');
+    const dotsContainer = document.getElementById('bannerDots');
+    if(!track || !dotsContainer) return;
+    
+    const finalBanners = MASTER_CONFIG.banners && MASTER_CONFIG.banners.length > 0 ? MASTER_CONFIG.banners : [
+      { title: '📢 Telegram Channel', subtitle: 'আমাদের অফিসিয়াল চ্যানেলে জয়েন করুন!', btnText: 'Join Now →', url: 'https://t.me/YOUR_CHANNEL_LINK', icon: '📢', color1: '#0088cc', color2: '#00a8e8' },
+      { title: '👥 Telegram Group', subtitle: 'আমাদের কমিউনিটি গ্রুপে জয়েন করুন!', btnText: 'Join Now →', url: 'https://t.me/YOUR_GROUP_LINK', icon: '👥', color1: '#229ED9', color2: '#0077b6' },
+      { title: '🎁 Daily Claim', subtitle: 'প্রতিদিন ফ্রি কয়েন নিন!', btnText: 'Claim Now →', action: 'dailyClaimModal', icon: '🎁', color1: '#f59e0b', color2: '#ef4444' },
+      { title: '🚀 Rocket', subtitle: 'দ্রুত ইনকাম শুরু করুন!', btnText: 'Start Now →', action: 'rocketModal', icon: '🚀', color1: '#f093fb', color2: '#f5576c' },
+      { title: '🌐 Visit Website', subtitle: 'ওয়েবসাইট ভিজিট করে ইনকাম!', btnText: 'Visit Now →', action: 'visitModal', icon: '🌐', color1: '#0ea5e9', color2: '#10b981' }
+    ];
+    
+    track.innerHTML = finalBanners.map(b => {
+      const clickEvent = b.url ? `window.open('${b.url}', '_blank')` : `openModal('${b.action}')`;
+      return `
+      <div class="banner-slide" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2});">
+        <div class="banner-slide-content"><h3>${b.title}</h3><p>${b.subtitle}</p><button onclick="${clickEvent}">${b.btnText || 'এখনই দেখুন →'}</button></div>
+        <div class="banner-slide-icon">${b.icon}</div>
+      </div>
+    `}).join('');
+    
+    dotsContainer.innerHTML = finalBanners.map((_, i) => `<div class="banner-dot ${i === 0 ? 'active' : ''}" onclick="goToBanner(${i})"></div>`).join('');
+    window.goToBanner = function(index) { currentBannerIndex = index; updateBannerTrack(); restartBannerAutoPlay(); };
+    function updateBannerTrack() {
+      track.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
+      const dots = dotsContainer.querySelectorAll('.banner-dot');
+      dots.forEach((d, i) => d.classList.toggle('active', i === currentBannerIndex));
+    }
+    function nextBanner() { currentBannerIndex = (currentBannerIndex + 1) % finalBanners.length; updateBannerTrack(); }
+    function prevBanner() { currentBannerIndex = (currentBannerIndex - 1 + finalBanners.length) % finalBanners.length; updateBannerTrack(); }
+    function restartBannerAutoPlay() {
+      if(bannerSlideInterval) clearInterval(bannerSlideInterval);
+      if(finalBanners.length > 1) bannerSlideInterval = setInterval(nextBanner, 4000);
+    }
+    let touchStartX = 0; let touchEndX = 0;
+    track.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; if(bannerSlideInterval) clearInterval(bannerSlideInterval); }, {passive: true});
+    track.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const diff = touchStartX - touchEndX;
+      if(diff > 40) nextBanner(); else if(diff < -40) prevBanner();
+      restartBannerAutoPlay();
+    }, {passive: true});
+    track.style.transform = 'translateX(0%)'; currentBannerIndex = 0; updateBannerTrack(); restartBannerAutoPlay();
+  }
+
+  function openNotifModal() {
+    if(!currentUser) return;
+    const list = document.getElementById('notifList');
+    if(!currentUser.notifications || currentUser.notifications.length === 0) {
+      list.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">কোনো নোটিফিকেশন নেই</p>';
+    } else {
+      const reversedNotifs = [...currentUser.notifications].reverse();
+      list.innerHTML = reversedNotifs.map(n => `<div class="notif-item">${n.msg}<span class="time">🕒 ${n.date}</span></div>`).join('');
+      saveUserData({ notifications: [] });
+      document.getElementById('notifBadge').style.display = 'none';
+    }
+    openModal('notifModal');
+  }
+
+  function logout() {
+    if(!confirm('Are you sure you want to logout?')) return;
+    localStorage.removeItem('app_current_user'); 
+    showToast('✅ Logged out successfully!');
+    setTimeout(() => location.reload(), 1000);
+  }
+
+  let toastTimeout = null;
+  function showToast(msg, color = '#333') {
+    const t = document.getElementById('toast'); 
+    t.textContent = msg; 
+    t.style.background = color;
+    t.classList.add('show');
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
+      if(e.target.id !== 'webViewModal') e.target.classList.remove('active');
+    }
+  });
+
+  /* ============================================================
+     ✅ 13. START APP
+     ============================================================ */
+  checkLoginStatus();
+  
+  setTimeout(hideSplash, 5000);
+
+  setTimeout(() => {
     const params = new URLSearchParams(window.location.search);
-    const refCode = params.get('ref');
+    let refCode = params.get('ref');
+    if (!refCode && tg?.initDataUnsafe?.start_param) refCode = tg.initDataUnsafe.start_param;
     if(refCode) {
       const refInput = document.getElementById('regReferCode');
       if(refInput) {
@@ -804,677 +1408,8 @@
         setTimeout(() => showToast('🎁 রেফারেল কোড অটো-অ্যাপ্লাই হয়েছে!'), 500);
       }
     }
-  }
+  }, 1000);
 
-  window.addEventListener('focus', () => { if(!isTyping && localStorage.getItem('app_current_user')) { updateUI(); initBannerSlider(); } });
-  document.addEventListener('visibilitychange', () => { if(!document.hidden && !isTyping && localStorage.getItem('app_current_user')) { setTimeout(() => { if(!isTyping) { updateUI(); initBannerSlider(); } }, 300); } });
-  window.addEventListener('storage', (e) => { if(e.key === 'app_master_db' && !isTyping) { setTimeout(() => { updateUI(); initBannerSlider(); }, 100); } });
-
-  function openNotifModal() {
-    const u = getCurrentUser(); if(!u) return;
-    const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const list = document.getElementById('notifList');
-    if(!user.notifications || user.notifications.length === 0) list.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">কোনো নোটিফিকেশন নেই</p>';
-    else {
-      list.innerHTML = user.notifications.map(n => `<div class="notif-item">${n.msg}<span class="time">🕒 ${n.date}</span></div>`).join('');
-      user.notifications = []; saveMasterData(data); document.getElementById('notifBadge').style.display = 'none';
-    }
-    openModal('notifModal');
-  }
-
-  function logout() {
-    if(!confirm('Are you sure you want to logout?')) return;
-    localStorage.removeItem('app_current_user'); showToast('✅ Logged out successfully!');
-    setTimeout(() => location.reload(), 1000);
-  }
-
-  let toastTimeout = null;
-  function showToast(msg) {
-    const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
-    if (toastTimeout) clearTimeout(toastTimeout);
-    toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
-  }
-
-  function checkSpamTimer() {
-    const data = getMasterData();
-    const user = getCurrentUser();
-    const spamTimer = data.config.fraud?.spamTimer || 0;
-    if (spamTimer <= 0) return true;
-    
-    const now = Date.now();
-    const lastTime = user.lastActionTime || 0;
-    const timeDiff = now - lastTime;
-    const requiredTime = spamTimer * 1000;
-    
-    if (lastTime > 0 && timeDiff < requiredTime) {
-      const remaining = Math.ceil((requiredTime - timeDiff) / 1000);
-      showToast(`⏳ অপেক্ষা করুন! পরের টাস্ক করতে আরও ${remaining} সেকেন্ড বাকি।`);
-      return false;
-    }
-    return true;
-  }
-
-  function updateLastActionTime() {
-    const data = getMasterData();
-    const user = data.users.find(u => u.id == localStorage.getItem('app_current_user'));
-    if (user) {
-      user.lastActionTime = Date.now();
-      saveMasterData(data);
-    }
-  }
-
-  function checkVPNWarning() {
-    const data = getMasterData();
-    if(data.config.fraud?.vpnBlock === true) {
-      if(Math.random() < 0.3) {
-        showToast('⚠️ ভিপিএন ব্যবহার করা নিষেধ! আপনার অ্যাকাউন্ট ব্লক হতে পারে।');
-      }
-    }
-  }
-
-  function openModal(id) {
-    updateUI();
-    if (['wheelModal', 'scratchModal', 'quizModal', 'captchaModal', 'visitModal', 'videoModal'].includes(id)) {
-      if (!checkSpamTimer()) return;
-      checkVPNWarning();
-    }
-
-    document.getElementById(id).classList.add('active');
-    if (id === 'wheelModal') resetWheel();
-    if (id === 'dailyClaimModal') playAd('claim');
-    if (id === 'scratchModal') resetScratch();
-    if (id === 'quizModal') { 
-      document.getElementById('quizAdSection').style.display='none'; 
-      document.getElementById('quizContent').style.display='block'; 
-      loadQuizQuestions(); 
-    }
-    if (id === 'captchaModal') { 
-      document.getElementById('captchaAdSection').style.display='none'; 
-      document.getElementById('captchaContent').style.display='block'; 
-      loadCaptchaQuestions(); 
-    }
-  }
-
-  function closeModal(id) {
-    document.getElementById(id).classList.remove('active');
-    if (id === 'dailyClaimModal') stopAd('claim');
-    if (id === 'wheelModal') stopAd('spin');
-    if (id === 'scratchModal') stopAd('scratch');
-    if (id === 'quizModal') stopAd('quiz');
-    if (id === 'captchaModal') stopAd('captcha');
-  }
-  
-  function showHome() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-
-  function resetWheel() {
-    const wheel = document.getElementById('wheel'); if(wheel) wheel.style.transform = 'rotate(0deg)';
-    document.getElementById('spinResult').textContent = ''; document.getElementById('spinBtn').disabled = false;
-    document.getElementById('spinBtn').textContent = 'Spin Now'; document.getElementById('spinAdSection').style.display = 'none';
-  }
-
-  function resetScratch() {
-    const box = document.getElementById('scratchBox'); if(box) { box.classList.remove('revealed'); box.textContent = 'Tap to Scratch'; }
-    document.getElementById('scratchAdSection').style.display = 'none';
-  }
-
-  let adTimers = { claim: null, spin: null, scratch: null, quiz: null, captcha: null };
-  let adStatus = { claim: false, spin: false, scratch: false };
-
-  function playAd(type) {
-    if(type === 'claim' && getCurrentUser().lastClaimDate === new Date().toDateString()) return;
-
-    const c = getMasterData().config;
-    const isForceAdEnabled = c.fraud?.forceAd === true;
-    
-    if(!isForceAdEnabled) {
-      const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-      
-      if(type === 'claim') { 
-        user.balance = (user.balance || 0) + data.config.dailyClaim; 
-        user.lastClaimDate = new Date().toDateString();
-        saveMasterData(data); updateUI(); showToast(`🎉 🪙 ${data.config.dailyClaim} Coins Claimed!`); closeModal('dailyClaimModal');
-        logUserActivity(`🎁 ডেইলি ক্লেইম করেছে (+🪙${data.config.dailyClaim})`); updateLastActionTime();
-      }
-      if(type === 'spin') executeSpin();
-      if(type === 'scratch') executeScratch();
-      if(type === 'quiz') { 
-        user.quizUsed = (user.quizUsed || 0) + 1; 
-        user.balance = (user.balance || 0) + data.config.quizReward;
-        saveMasterData(data); updateUI(); showToast(`✅ সঠিক! +🪙${data.config.quizReward} Coins`);
-        logUserActivity(`🧮 ম্যাথ কুইজ খেলেছে (+🪙${data.config.quizReward})`); updateLastActionTime();
-        
-        if((user.quizUsed || 0) < data.config.limitQuiz) {
-          document.getElementById('quizContent').style.display = 'block'; loadQuizQuestions();
-        } else {
-          document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
-          document.getElementById('quizOptions').innerHTML = '';
-          document.getElementById('quizVerifyBtn').style.display = 'none';
-        }
-      }
-      if(type === 'captcha') { 
-        user.captchaUsed = (user.captchaUsed || 0) + 1; 
-        user.balance = (user.balance || 0) + data.config.captchaReward;
-        saveMasterData(data); updateUI(); showToast(`✅ Verified! +🪙${data.config.captchaReward} Coins`);
-        logUserActivity(`🔐 ক্যাপচা সলভ করেছে (+🪙${data.config.captchaReward})`); updateLastActionTime();
-        
-        if((user.captchaUsed || 0) < data.config.limitCaptcha) {
-          document.getElementById('captchaContent').style.display = 'block'; loadCaptchaQuestions();
-        } else {
-          document.getElementById('captchaBox').textContent = 'DONE';
-          document.getElementById('captchaInput').disabled = true;
-        }
-      }
-      return;
-    }
-
-    const section = document.getElementById(type + 'AdSection');
-    const iframe = document.getElementById(type + 'AdIframe');
-    const timerBadge = document.getElementById(type + 'AdTimer');
-    
-    if(!section || !iframe || !timerBadge) return;
-
-    section.style.display = 'block';
-    const joiner = c.adUrl.includes('?') ? '&' : '?';
-    iframe.src = c.adUrl + joiner + 'autoplay=1&mute=1';
-    
-    let timeLeft = c.adDuration || 15; 
-    timerBadge.textContent = timeLeft + 's'; 
-    adStatus[type] = false;
-    
-    if(type === 'claim') document.getElementById('claimBtn').disabled = true;
-    if(type === 'spin') { document.getElementById('spinBtn').disabled = true; document.getElementById('spinBtn').textContent = 'অ্যাড চলছে...'; }
-    if(type === 'scratch') document.getElementById('scratchBox').textContent = 'অ্যাড চলছে...';
-    
-    if (adTimers[type]) clearInterval(adTimers[type]);
-    adTimers[type] = setInterval(() => {
-      timeLeft--; timerBadge.textContent = timeLeft + 's';
-      
-      if (section.style.display === 'none' && timeLeft > 0) {
-        clearInterval(adTimers[type]);
-        return;
-      }
-
-      if (timeLeft <= 0) {
-        clearInterval(adTimers[type]); timerBadge.textContent = 'অ্যাড শেষ!'; adStatus[type] = true; section.style.display = 'none';
-        
-        const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-
-        if(type === 'claim') { 
-          document.getElementById('claimBtn').disabled = false;
-          user.balance = (user.balance || 0) + data.config.dailyClaim; 
-          user.lastClaimDate = new Date().toDateString();
-          saveMasterData(data); updateUI(); showToast(`🎉 🪙 ${data.config.dailyClaim} Coins Claimed!`); closeModal('dailyClaimModal');
-          logUserActivity(`🎁 ডেইলি ক্লেইম করেছে (+🪙${data.config.dailyClaim})`); updateLastActionTime();
-        }
-        if(type === 'spin') executeSpin();
-        if(type === 'scratch') executeScratch();
-        
-        if(type === 'quiz') { 
-          user.quizUsed = (user.quizUsed || 0) + 1; 
-          user.balance = (user.balance || 0) + data.config.quizReward;
-          saveMasterData(data); updateUI();
-          showToast(`✅ সঠিক! +🪙${data.config.quizReward} Coins`);
-          logUserActivity(`🧮 ম্যাথ কুইজ খেলেছে (+🪙${data.config.quizReward})`); updateLastActionTime();
-          
-          if((user.quizUsed || 0) < data.config.limitQuiz) {
-            document.getElementById('quizContent').style.display = 'block';
-            loadQuizQuestions();
-          } else {
-            document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
-            document.getElementById('quizOptions').innerHTML = '';
-            document.getElementById('quizVerifyBtn').style.display = 'none';
-          }
-        }
-        
-        if(type === 'captcha') { 
-          user.captchaUsed = (user.captchaUsed || 0) + 1; 
-          user.balance = (user.balance || 0) + data.config.captchaReward;
-          saveMasterData(data); updateUI();
-          showToast(`✅ Verified! +🪙${data.config.captchaReward} Coins`);
-          logUserActivity(`🔐 ক্যাপচা সলভ করেছে (+🪙${data.config.captchaReward})`); updateLastActionTime();
-          
-          if((user.captchaUsed || 0) < data.config.limitCaptcha) {
-            document.getElementById('captchaContent').style.display = 'block';
-            loadCaptchaQuestions();
-          } else {
-            document.getElementById('captchaBox').textContent = 'DONE';
-            document.getElementById('captchaInput').disabled = true;
-          }
-        }
-      }
-    }, 1000);
-  }
-
-  function stopAd(type) {
-    if(adTimers[type]) clearInterval(adTimers[type]);
-    const iframe = document.getElementById(type + 'AdIframe'); if(iframe) iframe.src = '';
-    adStatus[type] = false;
-  }
-
-  function claimDaily() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    if(user.lastClaimDate === new Date().toDateString()) return showToast('Already claimed!');
-    playAd('claim');
-  }
-
-  function requestSpin() {
-    const u = getCurrentUser(); if((u.spinUsed || 0) >= getMasterData().config.limitSpin) return showToast('No spins left!');
-    playAd('spin');
-  }
-
-  function executeSpin() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const rewards = [2, 5, 1, 10, 3, 2, 1, data.config.spinMax]; const idx = Math.floor(Math.random() * rewards.length); const reward = rewards[idx];
-    const wheel = document.getElementById('wheel'); wheel.style.transform = `rotate(${360*5 + (360 - idx*45 - 22.5)}deg)`;
-    setTimeout(() => {
-      user.spinUsed = (user.spinUsed || 0) + 1; user.balance = (user.balance || 0) + reward;
-      saveMasterData(data); updateUI(); document.getElementById('spinResult').textContent = `🎉 Won 🪙 ${reward} Coins!`;
-      document.getElementById('spinBtn').disabled = false; document.getElementById('spinBtn').textContent = 'Spin Now'; showToast(`Won 🪙${reward} Coins`);
-      logUserActivity(`🎡 লাকি স্পিন করেছে (+🪙${reward})`);
-      updateLastActionTime();
-    }, 4200);
-  }
-
-  function requestScratch() {
-    const u = getCurrentUser(); 
-    if((u.scratchUsed || 0) >= getMasterData().config.limitScratch) {
-       document.getElementById('scratchBox').textContent = 'Limit Reached';
-       return showToast('❌ আপনার আজকের স্ক্র্যাচ কার্ড লিমিট শেষ হয়ে গেছে!');
-    }
-    playAd('scratch');
-  }
-
-  function executeScratch() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const reward = Math.floor(Math.random() * data.config.scratchMax) + 1;
-    const box = document.getElementById('scratchBox'); box.classList.add('revealed'); box.textContent = '🪙 ' + reward;
-    user.scratchUsed = (user.scratchUsed || 0) + 1; user.balance = (user.balance || 0) + reward;
-    saveMasterData(data); updateUI(); showToast(`Scratched 🪙${reward} Coins!`);
-    setTimeout(() => { box.classList.remove('revealed'); box.textContent = 'Tap to Scratch'; }, 1500);
-    logUserActivity(`🎫 স্ক্র্যাচ কার্ড খেলেছে (+🪙${reward})`);
-    updateLastActionTime();
-  }
-
-  let currentQuiz = null;
-  function loadQuizQuestions() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    if((user.quizUsed || 0) >= data.config.limitQuiz) { 
-      document.getElementById('quizQuestion').textContent = 'No quizzes left today!'; 
-      document.getElementById('quizOptions').innerHTML = ''; 
-      document.getElementById('quizVerifyBtn').style.display = 'none';
-      return; 
-    }
-    
-    const a = Math.floor(Math.random() * 20) + 1; 
-    const b = Math.floor(Math.random() * 20) + 1; 
-    const op = ['+', '-', '*'][Math.floor(Math.random() * 3)];
-    const ans = op === '+' ? a + b : op === '-' ? a - b : a * b; 
-    currentQuiz = { ans, selectedAnswer: null };
-    
-    document.getElementById('quizQuestion').textContent = `${a} ${op} ${b} = ?`;
-    const opts = [ans, ans + 1, ans - 1, ans + 2].sort(() => Math.random() - 0.5);
-    
-    document.getElementById('quizOptions').innerHTML = opts.map(o => 
-      `<div class="quiz-opt" data-val="${o}" onclick="selectQuizOption(this, ${o})">${o}</div>`
-    ).join('');
-    
-    document.getElementById('quizVerifyBtn').style.display = 'none';
-  }
-
-  function selectQuizOption(el, val) {
-    document.querySelectorAll('#quizOptions .quiz-opt').forEach(o => {
-      o.classList.remove('correct', 'wrong');
-      o.style.border = '2px solid transparent';
-    });
-    
-    el.style.border = '2px solid #667eea';
-    currentQuiz.selectedAnswer = val;
-    document.getElementById('quizVerifyBtn').style.display = 'block';
-  }
-
-  function verifyQuizAnswer() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    
-    if((user.quizUsed || 0) >= data.config.limitQuiz) {
-      document.getElementById('quizQuestion').textContent = 'No quizzes left today!';
-      document.getElementById('quizOptions').innerHTML = '';
-      document.getElementById('quizVerifyBtn').style.display = 'none';
-      return showToast('❌ আপনার আজকের কুইজ লিমিট শেষ হয়ে গেছে!');
-    }
-    
-    if(currentQuiz.selectedAnswer === null) {
-      return showToast('❌ অনুগ্রহ করে একটি উত্তর সিলেক্ট করুন!');
-    }
-    
-    if(currentQuiz.selectedAnswer === currentQuiz.ans) {
-      document.getElementById('quizContent').style.display = 'none'; 
-      playAd('quiz'); 
-    } else {
-      showToast('❌ ভুল উত্তর! আবার চেষ্টা করুন।');
-      setTimeout(() => {
-        if((user.quizUsed || 0) < data.config.limitQuiz) {
-          loadQuizQuestions();
-        } else { 
-          document.getElementById('quizQuestion').textContent = 'No quizzes left today!'; 
-          document.getElementById('quizOptions').innerHTML = ''; 
-          document.getElementById('quizVerifyBtn').style.display = 'none';
-        }
-      }, 1000);
-    }
-  }
-
-  let currentCaptcha = '';
-  function loadCaptchaQuestions() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    if((user.captchaUsed || 0) >= data.config.limitCaptcha) { 
-      document.getElementById('captchaBox').textContent = 'DONE'; 
-      document.getElementById('captchaInput').disabled = true; 
-      return; 
-    }
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    currentCaptcha = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    document.getElementById('captchaBox').textContent = currentCaptcha; 
-    document.getElementById('captchaInput').value = ''; 
-    document.getElementById('captchaInput').disabled = false;
-  }
-
-  function verifyCaptcha() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    
-    if((user.captchaUsed || 0) >= data.config.limitCaptcha) {
-      document.getElementById('captchaBox').textContent = 'DONE';
-      document.getElementById('captchaInput').disabled = true;
-      return showToast('❌ আপনার আজকের ক্যাপচা লিমিট শেষ হয়ে গেছে!');
-    }
-
-    const input = document.getElementById('captchaInput').value.toUpperCase();
-    if(input === currentCaptcha) {
-      document.getElementById('captchaContent').style.display = 'none'; 
-      playAd('captcha'); 
-    } else { 
-      showToast('❌ Wrong Captcha!'); 
-      document.getElementById('captchaInput').value = ''; 
-      loadCaptchaQuestions(); 
-    }
-  }
-
-  const visitLinks = ['https://example.com', 'https://en.m.wikipedia.org/wiki/Web_browser', 'https://en.m.wikipedia.org/wiki/Website', 'https://en.m.wikipedia.org/wiki/Internet', 'https://bn.m.wikipedia.org/wiki/%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE%E0%A6%A6%E0%A7%87%E0%A6%B6', 'https://en.m.wikipedia.org/wiki/Smartphone', 'https://en.m.wikipedia.org/wiki/Computer', 'https://en.m.wikipedia.org/wiki/Technology', 'https://en.m.wikipedia.org/wiki/Software', 'https://en.m.wikipedia.org/wiki/Application_software'];
-  const videoLinks = ['https://www.youtube.com/embed/dQw4w9WgXcQ', 'https://www.youtube.com/embed/9bZkp7q19f0', 'https://www.youtube.com/embed/kJQP7kiw5Fk', 'https://www.youtube.com/embed/JGwWNGJdvx8', 'https://www.youtube.com/embed/RgKAFK5djSk', 'https://www.youtube.com/embed/OPf0YbXqDm0', 'https://www.youtube.com/embed/fJ9rUzIMcZQ', 'https://www.youtube.com/embed/hT_nvWreIhg', 'https://www.youtube.com/embed/09R8_2nJtjg', 'https://www.youtube.com/embed/CevxZvSJLk8'];
-
-  function renderVisitList() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const list = document.getElementById('visitList'); const limit = data.config.limitVisit;
-    list.innerHTML = visitLinks.slice(0, limit).map((url, i) => {
-      const used = (user.visitUsed || []).includes(i);
-      return `<div class="list-item"><span style="font-size:12px;">${url.replace('https://','').substring(0,25)}...</span><button onclick="startTimer('visit', ${i}, '${url}')" ${used ? 'disabled' : ''}>${used ? 'Done ✓' : 'Visit'}</button></div>`;
-    }).join('');
-  }
-
-  function renderVideoList() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const list = document.getElementById('videoList'); const limit = data.config.limitVideo;
-    list.innerHTML = videoLinks.slice(0, limit).map((url, i) => {
-      const used = (user.videoUsed || []).includes(i);
-      return `<div class="list-item"><span style="font-size:12px;">Video ${i + 1}</span><button onclick="startTimer('video', ${i}, '${url}')" ${used ? 'disabled' : ''}>${used ? 'Done ✓' : 'Watch'}</button></div>`;
-    }).join('');
-  }
-
-  let activeTimer = null;
-  let timerCompleted = false;
-
-  function startTimer(type, idx, url) {
-    if (!checkSpamTimer()) return;
-    
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    timerCompleted = false;
-    
-    openWebView(url, type === 'visit' ? '🌐 Visit Website' : '📺 Watch Video');
-    
-    let timeLeft = 60; 
-    const timerEl = document.getElementById('webViewTimer'); 
-    timerEl.textContent = timeLeft + 's';
-    
-    if(activeTimer) clearInterval(activeTimer);
-    activeTimer = setInterval(() => {
-      timeLeft--; 
-      timerEl.textContent = timeLeft + 's';
-      
-      if(timeLeft <= 0) {
-        clearInterval(activeTimer); 
-        timerCompleted = true;
-        closeWebView(); 
-        
-        if(type === 'visit') { 
-          user.visitUsed = user.visitUsed || []; 
-          user.visitUsed.push(idx); 
-          user.balance = (user.balance || 0) + data.config.visitReward; 
-          showToast(`✅ Visited! +🪙${data.config.visitReward} Coins`); 
-        } else { 
-          user.videoUsed = user.videoUsed || []; 
-          user.videoUsed.push(idx); 
-          user.balance = (user.balance || 0) + data.config.videoReward; 
-          showToast(`✅ Watched! +🪙${data.config.videoReward} Coins`); 
-        }
-        
-        saveMasterData(data); 
-        updateUI();
-        logUserActivity(type === 'visit' ? `🌐 ওয়েবসাইট ভিজিট করেছে (+🪙${data.config.visitReward})` : `📺 ভিডিও দেখেছে (+🪙${data.config.videoReward})`);
-        updateLastActionTime();
-      }
-    }, 1000);
-  }
-
-  function openWebView(url, title) {
-    document.getElementById('webViewTitle').textContent = title; 
-    document.getElementById('webViewIframe').src = url; 
-    document.getElementById('webViewModal').classList.add('active');
-  }
-
-  function closeWebView() {
-    if(activeTimer) clearInterval(activeTimer); 
-    document.getElementById('webViewModal').classList.remove('active'); 
-    document.getElementById('webViewIframe').src = 'about:blank';
-    
-    if(!timerCompleted) {
-      showToast('⚠️ আপনি ৬০ সেকেন্ড শেষ করেননি! কোনো রিওয়ার্ড পাবেন না।');
-    }
-  }
-
-  let selectedMethodData = null;
-  function renderWithdrawMethods() {
-    const data = getMasterData();
-    const methods = data.config.withdrawMethods || [];
-    const container = document.getElementById('withdrawOptions');
-    
-    if(methods.length === 0) { container.innerHTML = '<p style="text-align:center; color:#888;">No withdraw methods available.</p>'; return; }
-
-    container.innerHTML = methods.map((m, i) => {
-      const minCoins = tkToCoins(m.minAmount);
-      return `
-      <div class="withdraw-option" data-index="${i}" onclick="selectWithdrawMethod(this, ${i})">
-        <div class="method-info">
-          ${m.logo ? `<img src="${m.logo}" class="w-logo" alt="${m.name}">` : `<span style="font-size: 22px;">🏦</span>`}
-          ${m.name}
-        </div>
-        <span>Min 🪙 ${minCoins}</span>
-      </div>`;
-    }).join('');
-    
-    selectedMethodData = null;
-  }
-
-  function selectWithdrawMethod(el, index) {
-    document.querySelectorAll('.withdraw-option').forEach(o => o.classList.remove('selected'));
-    el.classList.add('selected');
-    const data = getMasterData();
-    selectedMethodData = data.config.withdrawMethods[index];
-  }
-
-  function submitWithdraw() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    if(!selectedMethodData) return showToast('Select method!');
-    const num = document.getElementById('withdrawNumber').value.trim();
-    const coinsAmt = parseFloat(document.getElementById('withdrawAmount').value);
-    
-    if(!num) return showToast('Enter number/address!');
-    if(!coinsAmt || coinsAmt <= 0) return showToast('Enter valid coin amount!');
-    
-    const tkAmt = coinsToTk(coinsAmt);
-    const maxWithdrawTk = data.config.fraud?.maxWithdraw || 0;
-    if(maxWithdrawTk > 0 && tkAmt > maxWithdrawTk) {
-      return showToast(`❌ Max withdraw limit is ৳${maxWithdrawTk} (🪙 ${tkToCoins(maxWithdrawTk)} coins)`);
-    }
-    
-    const minCoinsRequired = tkToCoins(selectedMethodData.minAmount);
-    if(coinsAmt < minCoinsRequired) return showToast(`Min 🪙${minCoinsRequired} (৳${selectedMethodData.minAmount}) required!`);
-    if(coinsAmt > (user.balance || 0)) return showToast('Insufficient coin balance!');
-
-    user.balance = (user.balance || 0) - coinsAmt; 
-    user.withdrawHistory = user.withdrawHistory || [];
-    const now = new Date();
-    const timeStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}, ${now.getHours()%12 || 12}:${String(now.getMinutes()).padStart(2, '0')} ${now.getHours() >= 12 ? 'PM' : 'AM'}`;
-    
-    user.withdrawHistory.unshift({ 
-      method: selectedMethodData.name, 
-      amount: coinsAmt,
-      tkAmount: tkAmt,
-      number: num, 
-      date: timeStr, 
-      status: 'pending' 
-    });
-    saveMasterData(data); updateUI(); showToast(`✅ Request submitted for 🪙${coinsAmt} (≈৳${tkAmt.toFixed(2)})!`);
-    logUserActivity(`💸 উইথড্র রিকোয়েস্ট করেছে (-🪙${coinsAmt} ≈ ৳${tkAmt.toFixed(2)})`);
-    
-    document.getElementById('withdrawNumber').value = ''; document.getElementById('withdrawAmount').value = ''; selectedMethodData = null;
-  }
-
-  function renderHistory() {
-    const u = getCurrentUser(); const el = document.getElementById('withdrawHistory');
-    if(!u.withdrawHistory || !u.withdrawHistory.length) { el.innerHTML = '<p style="color:#888;font-size:12px;">No history</p>'; return; }
-    el.innerHTML = u.withdrawHistory.map(h => {
-      const coinsAmt = h.amount;
-      const tkAmt = h.tkAmount !== undefined ? h.tkAmount : coinsToTk(coinsAmt);
-      return `
-      <div class="history-item">
-        <div style="display:flex;justify-content:space-between;"><strong>${h.method}</strong><span>🪙 ${coinsAmt} (≈৳${tkAmt.toFixed(2)})</span></div>
-        <div style="display:flex;justify-content:space-between;margin-top:4px;"><span style="font-size:11px;color:#888;">${formatDate(h.date)}</span><span class="status ${h.status}">${h.status}</span></div>
-      </div>`;
-    }).join('');
-  }
-
-  function renderLeaderboard() {
-    const u = getCurrentUser(); const data = getMasterData(); const el = document.getElementById('leaderboardList');
-    let lbData = data.users.map(x => ({ name: x.name, amount: x.balance || 0, date: new Date().toLocaleDateString(), photo: x.photo || 'https://ui-avatars.com/api/?name=' + x.name.charAt(0) + '&background=667eea&color=fff', isMe: x.id === u.id }));
-    lbData.sort((a, b) => b.amount - a.amount); document.getElementById('lbDate').textContent = formatDate(new Date().toLocaleDateString());
-    el.innerHTML = lbData.map((d, i) => {
-      const isMe = d.isMe ? 'me' : ''; const badge = d.isMe ? '<span>You</span>' : ''; const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
-      return `<div class="lb-item ${isMe}"><div class="lb-rank">${rank}</div><img src="${d.photo}" class="lb-avatar"><div class="lb-info"><h4>${d.name} ${badge}</h4><p>${formatDate(d.date)}</p></div><div class="lb-amount">🪙 ${Math.floor(d.amount)}</div></div>`;
-    }).join('');
-  }
-
-  function saveProfile() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    user.name = document.getElementById('profileName').value.trim() || 'Guest User'; 
-    user.phone = document.getElementById('profilePhone').value.trim() || '+880 1XXXXXXXXX';
-    user.email = document.getElementById('profileEmail').value.trim();
-    saveMasterData(data); updateUI(); showToast('✅ Profile saved!');
-  }
-
-  function changePassword() {
-    const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-    const oldPass = document.getElementById('oldPassword').value.trim(); const newPass = document.getElementById('newPassword').value.trim(); const confirmPass = document.getElementById('confirmPassword').value.trim();
-    if(!oldPass || !newPass || !confirmPass) return showToast('সব ঘর পূরণ করুন!');
-    if(oldPass !== user.password) return showToast('পুরনো পাসওয়ার্ড সঠিক নয়!');
-    if(newPass.length < 4) return showToast('পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!');
-    if(newPass !== confirmPass) return showToast('নতুন পাসওয়ার্ড মিলছে না!');
-    user.password = newPass; saveMasterData(data);
-    document.getElementById('oldPassword').value = ''; document.getElementById('newPassword').value = ''; document.getElementById('confirmPassword').value = '';
-    showToast('✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!');
-  }
-
-  function uploadPhoto(e) {
-    const file = e.target.files[0]; if(!file) return; if(file.size > 500000) return showToast('❌ ছবি ৫০০KB এর কম হতে হবে!');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const u = getCurrentUser(); const data = getMasterData(); const user = data.users.find(x => x.id === u.id);
-      user.photo = ev.target.result; saveMasterData(data);
-      document.getElementById('headerAvatar').src = ev.target.result; document.getElementById('profileImg').src = ev.target.result; showToast('✅ Photo updated!');
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function copyRefer() {
-    const input = document.getElementById('referLink'); if(!input || !input.value) return showToast('❌ Referral link not ready!');
-    input.select(); input.setSelectionRange(0, 99999);
-    try { navigator.clipboard.writeText(input.value).then(() => showToast('✅ Link copied!')).catch(() => { document.execCommand('copy'); showToast('✅ Link copied!'); }); }
-    catch(e) { document.execCommand('copy'); showToast('✅ Link copied!'); }
-  }
-
-  function shareRefer() {
-    const input = document.getElementById('referLink'); if(!input || !input.value) return showToast('❌ Link not ready!');
-    const shareText = `🎁 Earning App-এ যোগ দিন!\nআমার রেফারেল লিংক ব্যবহার করে রেজিস্টার করুন এবং 🪙 ${getMasterData().config.refBonus} কয়েন বোনাস পান!\n\n${input.value}`;
-    if(navigator.share) navigator.share({ title: 'Earning App', text: shareText, url: input.value }).catch(() => {});
-    else { navigator.clipboard.writeText(shareText).then(() => showToast('✅ Share text copied!')).catch(() => showToast('❌ Share not supported!')); }
-  }
-
-  let currentBannerIndex = 0;
-  let bannerSlideInterval = null;
-
-  function initBannerSlider() {
-    const data = getMasterData();
-    const banners = data.banners || [];
-    const track = document.getElementById('bannerTrack');
-    const dotsContainer = document.getElementById('bannerDots');
-    if(!track || !dotsContainer) return;
-
-    const finalBanners = banners.length > 0 ? banners : [
-      { title: '🎁 রেফার করে কামান', subtitle: 'বন্ধুদের রেফার করে পান 🪙50 কয়েন বোনাস!', btnText: 'এখনই রেফার করুন →', action: 'referModal', icon: '🎁', color1: '#667eea', color2: '#764ba2' },
-      { title: '🎡 লাকি স্পিন করুন', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জিতুন!', btnText: 'স্পিন করুন →', action: 'wheelModal', icon: '🎡', color1: '#11998e', color2: '#38ef7d' },
-      { title: '📺 ভিডিও দেখুন', subtitle: 'প্রতিটি ভিডিওতে পান 🪙3 ইনকাম!', btnText: 'ভিডিও দেখুন →', action: 'videoModal', icon: '📺', color1: '#f093fb', color2: '#f5576c' },
-      { title: '🎫 স্ক্র্যাচ কার্ড', subtitle: 'প্রতিদিন 🪙15 পর্যন্ত জেতার সুযোগ!', btnText: 'স্ক্র্যাচ করুন →', action: 'scratchModal', icon: '🎫', color1: '#fa709a', color2: '#fee140' }
-    ];
-
-    track.innerHTML = finalBanners.map(b => `
-      <div class="banner-slide" style="background: linear-gradient(135deg, ${b.color1}, ${b.color2});">
-        <div class="banner-slide-content"><h3>${b.title}</h3><p>${b.subtitle}</p><button onclick="openModal('${b.action}')">${b.btnText || 'এখনই দেখুন →'}</button></div>
-        <div class="banner-slide-icon">${b.icon}</div>
-      </div>
-    `).join('');
-
-    dotsContainer.innerHTML = finalBanners.map((_, i) => `<div class="banner-dot ${i === 0 ? 'active' : ''}" onclick="goToBanner(${i})"></div>`).join('');
-
-    window.goToBanner = function(index) {
-      currentBannerIndex = index; updateBannerTrack(); restartBannerAutoPlay();
-    };
-
-    function updateBannerTrack() {
-      track.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
-      const dots = dotsContainer.querySelectorAll('.banner-dot');
-      dots.forEach((d, i) => d.classList.toggle('active', i === currentBannerIndex));
-    }
-
-    function nextBanner() { currentBannerIndex = (currentBannerIndex + 1) % finalBanners.length; updateBannerTrack(); }
-    function prevBanner() { currentBannerIndex = (currentBannerIndex - 1 + finalBanners.length) % finalBanners.length; updateBannerTrack(); }
-
-    function restartBannerAutoPlay() {
-      if(bannerSlideInterval) clearInterval(bannerSlideInterval);
-      if(finalBanners.length > 1) bannerSlideInterval = setInterval(nextBanner, 4000);
-    }
-
-    let touchStartX = 0; let touchEndX = 0;
-    track.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; if(bannerSlideInterval) clearInterval(bannerSlideInterval); }, {passive: true});
-    track.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      const diff = touchStartX - touchEndX;
-      if(diff > 40) nextBanner(); else if(diff < -40) prevBanner();
-      restartBannerAutoPlay();
-    }, {passive: true});
-
-    track.style.transform = 'translateX(0%)'; currentBannerIndex = 0; updateBannerTrack(); restartBannerAutoPlay();
-  }
-
-  checkLoginStatus();
-  autoFillReferCode();
 </script>
 </body>
 </html>
